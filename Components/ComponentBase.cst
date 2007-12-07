@@ -63,13 +63,31 @@
 	//Provides information about the indexes contained in the table. 
 	//IndexSchemaCollection indexes = SourceTable.Indexes;
 		
+	
+	// Gets a list of columns that are included in the Create<TableName> factory method.
 	ColumnSchemaCollection colsUpdatable = new ColumnSchemaCollection();
 	foreach (ColumnSchema column in cols)
 	{
 		if ( ! IsIdentityColumn(column) && ! IsComputed(column) )
 			colsUpdatable.Add(column);
 	}
+// CUSTOM: Start customized non-netTiers method implementation
+	// Gets a list of columns that have a default value of GetDate().
+	ColumnSchemaCollection defaultDateCols = new ColumnSchemaCollection();	
+	foreach (ColumnSchema column in cols)
+	{
+		if(column.Name == "CreatedDate" || column.Name == "LastUpdatedDate")
+			defaultDateCols.Add(column);
+	}
 	
+	// Gets a list of columns that are included in the Create<TableName> factory method.
+	ColumnSchemaCollection colsUpdatableGetDate = new ColumnSchemaCollection();
+	foreach (ColumnSchema column in cols)
+	{
+		if ( ! IsIdentityColumn(column) && ! IsComputed(column) && ! defaultDateCols.Contains(column.Name) )
+			colsUpdatableGetDate.Add(column);
+	}
+// CUSTOM: End customized non-netTiers method implementation
 	//Get the columns that are common to all tables
 	ColumnSchemaCollection commonColumns = GetCommonTableColumns(SourceTables);
 	
@@ -95,6 +113,9 @@
 		
 	// this array store each Get BY MemberColumns in order to avoid to create doublon Get methods
 	System.Collections.ArrayList getbyKeys = new System.Collections.ArrayList();
+// CUSTOM: Start customized non-netTiers method implementation
+	bool IsLoggable = (SourceTable.Name != "EntityEvent" && SourceTable.Name != "EntityEventDetail" && ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel);
+// CUSTOM: End customized non-netTiers method implementation
 %>
 
 /*
@@ -147,6 +168,10 @@ namespace <%=NameSpace%>
 	[CLSCompliant(true)]
 	public <% if (UsePartialClass) Response.Write(" partial "); %>class <%=abstractClassName%> : <%=BLLNameSpace%>.<%= className%> , IComponentEntity
 	{
+<%// CUSTOM: Start customized non-netTiers method implementation%>
+		//variable used to decide if we should log actions to this entity
+		private bool _suppressLogging = false;
+<%// CUSTOM: End customized non-netTiers method implementation%>
 
 		#region Constructors
 		///<summary>
@@ -154,6 +179,11 @@ namespace <%=NameSpace%>
 		///</summary>
 		public <%=abstractClassName%>() : base()
 		{
+<%// CUSTOM: Start customized non-netTiers method implementation%>
+			<% if (IsLoggable) { %>
+			this.EntitySaving += new EntitySavingEventHandler(<%=className%>_AuditChanges);
+			<% } // end if %>
+<%// CUSTOM: End customized non-netTiers method implementation%>
 		}
 		
 		///<summary>
@@ -170,12 +200,47 @@ namespace <%=NameSpace%>
 			<% }// end for %>
 			return newComponent<%=className%>;
 		}
+<%// CUSTOM: Start customized non-netTiers method implementation%>	
+		<% if(colsUpdatableGetDate.Count != colsUpdatable.Count) { %>
+		///<summary>
+		/// A simple factory method to create a new <see cref="<%=className%>"/> instance. 
+		///</summary>
+		///<remarks>
+		/// If the primary key is a Guid, this method automatically sets it to Guid.NewGuid(). Fields with defaults of GetDate() are automatically set to DateTime.Now.
+		///</remarks>
+		<% for (int x=0; x < colsUpdatableGetDate.Count; x++) { 
+		if (!(colsUpdatableGetDate[x].IsPrimaryKeyMember && colsUpdatableGetDate[x].DataType == DbType.Guid)) { %>
+		///<param name="<%=GetFieldName(colsUpdatableGetDate[x]) %>"><%=colsUpdatableGetDate[x].Description%></param>
+		<% } 
+		} %>
+		public static <%=className%> Create<%=className%>(<% for (int x=0; x < colsUpdatableGetDate.Count; x++) { if (!(colsUpdatableGetDate[x].IsPrimaryKeyMember && colsUpdatableGetDate[x].DataType == DbType.Guid)) { %><%= GetCSType(colsUpdatableGetDate[x]) %> <%= GetFieldName(colsUpdatableGetDate[x]) %><%if (x < colsUpdatableGetDate.Count -1){%>, <%} } }// end for %>)
+		{
+			return Create<%=className%>(<%for (int x=0; x < colsUpdatable.Count; x++) { if (colsUpdatable[x].IsPrimaryKeyMember && colsUpdatable[x].DataType == DbType.Guid) { %>Guid.NewGuid()<% } else if (defaultDateCols.Contains(colsUpdatable[x])){ %>DateTime.Now<%} else { %> <%= GetFieldName(colsUpdatable[x]) %><% } if (x < colsUpdatable.Count -1) {%>,<%} }// end for %>);
+		}
+		<%}%>
+<%// CUSTOM: End customized non-netTiers method implementation%>				
 		#endregion Constructors
 		
 		#region Properties	
 		
 		#region Entity Properties
-		
+<%// CUSTOM: Start customized non-netTiers method implementation%>		
+		/// <summary>
+		/// 	Gets or Sets the LoggingEnabled property. If false we don't generate an audit
+		///		trail for actions on this object.
+		/// </summary>
+		public bool SuppressLogging
+		{
+			get 
+			{
+				return _suppressLogging; 
+			}
+			set
+			{
+				_suppressLogging = value;
+			}
+		}
+<%// CUSTOM: End customized non-netTiers method implementation%>		
 		<% for (int x=0; x < cols.Count; x++) { 
 			
 		string dataObjectFieldParams = GetDataObjectFieldCallParams(cols[x]);
@@ -203,6 +268,11 @@ namespace <%=NameSpace%>
 					return;
 					
 				base.<%= GetPropertyName(cols[x]) %> = value;
+<%// CUSTOM: Start customized non-netTiers method implementation%>
+				<% if (GetPropertyName(cols[x]) != "LastUpdatedDate" && SourceTable.Columns.Contains("LastUpdatedDate")) { %>
+				base.LastUpdatedDate = DateTime.Now;
+				<% } %>
+<%// CUSTOM: End customized non-netTiers method implementation%>
 				<% if (IncludeGetListByFK && cols[x].IsForeignKeyMember) { 
 					foreach(TableKeySchema tableKey in SourceTable.ForeignKeys)
 					{
@@ -259,7 +329,53 @@ namespace <%=NameSpace%>
 		<%}// IncludeGetListByFK%>	
 
 		#endregion Properties
+		
+<%// CUSTOM: Start customized non-netTiers method implementation%>	
+		<% if (IsLoggable) { %>
+		#region Audit Method
+		
+		/// <summary>
+		/// Event handler for whenever the <%=className %> is saved (be it Update/Delete/Insert).
+		/// </summary>
+		protected void <%=className %>_AuditChanges(object sender, Entities.EntityBase.EntitySavedEventArgs e)
+		{
+			this.Audit<%=className %>Changes(e.Action);
+		}
+		
+		/// <summary>
+		/// Audits any old value/new value changes for the <%=className %> domain entity.
+		/// </summary>
+		public void Audit<%=className %>Changes(EntitySaveAction action)
+		{
+			// TODO: This should technically only run when the actions are Insert, Update, Delete. 
+			// Do we need to check for this here, or is it handled further up the chain?
+			if (!this.SuppressLogging)
+			{
+				Entities.TList<EntityEventDetail> details = new Entities.TList<EntityEventDetail>();
+				
+				// No need to insert details for newly inserted objects. We know what the properties are by virtue of the entity itself.
+				if(action != EntitySaveAction.Insert)
+				{
+					<% for (int x=0; x < cols.Count; x++) 
+					{ 
+						if (GetPropertyName(cols[x]) != "LastUpdatedDate" && GetPropertyName(cols[x]) != "CreatedDate")
+						{
+					%>	
+					details.Add(DomainUtil.CreateAuditDetail(base.GetOriginalValue(<%= this.GetClassName(SourceTable, ClassNameFormat.Column) %>.<%=GetPropertyName(cols[x])%>), this.<%= GetPropertyName(cols[x])%>, "<%= GetPropertyName(cols[x])%>"));
+					<% 	}
+					} // end for each columns 
+					%>
+				}
 	
+				Domain.EventType eventType = Domain.EventType.GetByName(action.ToString());
+				DomainUtil.LogAuditEvent(eventType, SecurityContext.Identity, this.EntityId.<%=GetKeysName(SourceTable.PrimaryKey.MemberColumns)%>, this.TableName, DateTime.Now, details);
+			}
+		}
+		#endregion
+		<%
+		} // end if
+		%>
+<%// CUSTOM: End customized non-netTiers method implementation%>
 		<%
 		// If the chosen pattern to implement is a domain pattern, go ahead 
 		// and fill all data repository wrapper access here.

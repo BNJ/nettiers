@@ -20,9 +20,9 @@
 	
 <%@ Property Name="UsePartialClass" Type="System.Boolean" Default="true" Category="General" Description="Indicates if partial class should be generated." %>
 
-<%-- When debugging, you must include this section of code 
+
 <%@ Register Name="EntityData" Template="EntityData.cst" MergeProperties="False" ExcludeProperties="" %>
---%>
+<%-- When debugging, you must include this section of code--%>
 
 <%
 	
@@ -649,6 +649,29 @@ WriteRelationshipPropertyString();
 					return false;
 			}
 		}
+		
+		<%// CUSTOM: Start customized non-netTiers method implementation%>
+		/// <summary>
+		/// Returns the original state of the value (for auditing purposes)
+		/// </summary>
+		/// <param name="column">The column.</param>
+		/// <returns>
+		/// 	<c>object</c> if the property value has changed; otherwise, <c>null</c>.
+		/// </returns>
+		public object GetOriginalValue(<%= GetClassName(SourceTable, ClassNameFormat.Column) %> column)
+		{
+			switch(column)
+			{
+				<% for (int x=0; x < cols.Count; x++) { %>
+					case <%= GetClassName(SourceTable, ClassNameFormat.Column) %>.<%=GetPropertyName(cols[x])%>:
+					return _originalData.<%=GetPropertyName(cols[x])%>;
+				<% } %>
+			
+				default:
+					return null;
+			}
+		}
+		<%// CUSTOM: End customized non-netTiers method implementation%>
 		
 		/// <summary>
 		/// Determines whether the data has changed from original.

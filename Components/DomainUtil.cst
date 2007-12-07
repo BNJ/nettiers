@@ -42,6 +42,75 @@ namespace <%= NameSpace %>
 
             return builder.ToString();
         }		
+		<%// CUSTOM: Start customized non-netTiers method implementation%>
+		/// <summary>
+		/// Creates a pre-formated EntityEventDetail for use in the LogAuditEvent function.
+		/// </summary>
+		/// <param name="oldValue"></param>
+		/// <param name="newValue"></param>
+		/// <param name="fieldName"></param>
+		/// <returns></returns>
+		public static EntityEventDetail CreateAuditDetail(object oldValue, object newValue, string fieldName)
+		{
+			return EntityEventDetail.CreateEntityEventDetail(Guid.Empty, oldValue == null ? null : System.Convert.ToString(oldValue), newValue == null ? null : System.Convert.ToString(newValue), fieldName);
+		}
+		
+		/// <summary>
+		/// Logs an audit event to the event log.
+		/// </summary>
+		public static void LogAuditEvent(EventType eventType, System.Security.Principal.IIdentity user, Guid recordId, string sourceTableName,
+			DateTime logDate, Entities.TList<EntityEventDetail> details)
+		{
+			Guid actionerUserId = Guid.Empty;
+
+			if (user != null)
+			{
+				try
+				{
+					actionerUserId = new Guid(user.Name);
+				}
+				catch (Exception) { }
+			}
+
+			EntityEvent logEvent = EntityEvent.CreateEntityEvent(Guid.NewGuid(), eventType.EventTypeId, actionerUserId, recordId, sourceTableName, logDate, logDate);
+			logEvent.Save();
+
+			Entities.TList<EntityEventDetail> detailsToSave = new TList<EntityEventDetail>();
+
+			//on update only record the values that have changed
+			if (eventType.Name == "Update")
+			{
+				foreach (EntityEventDetail detail in details)
+				{
+					if (detail.OldValue != detail.NewValue)
+					{
+						detail.EntityEventId = logEvent.EntityEventId;
+						detailsToSave.Add(detail);
+					}
+				}
+			}
+			//on insert we want to record all the new values (old will be null)
+			else if (eventType.Name == "Insert" || eventType.Name == "Exception")
+			{
+				foreach (EntityEventDetail detail in details)
+				{
+					detail.EntityEventId = logEvent.EntityEventId;
+					detailsToSave.Add(detail);
+				}
+			}
+			//if it's a delete we record null for the new values
+			else if (eventType.Name == "Delete")
+			{
+				foreach (EntityEventDetail detail in details)
+				{
+					detail.EntityEventId = logEvent.EntityEventId;
+					detailsToSave.Add(detail);
+				}
+			}
+
+			EntityEventDetail.Save(detailsToSave);
+		}
+		<%// CUSTOM: END customized non-netTiers method implementation%>
 		
 		/// <summary>
 		/// Wraps call to tohe <see cref="ExceptionPolicy"/> class which handles all exceptions based on the security policy.

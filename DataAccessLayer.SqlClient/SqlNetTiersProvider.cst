@@ -47,6 +47,9 @@ namespace <%=DALNameSpace%>.SqlClient
         private string _connectionString;
         private bool _useStoredProcedure;
         string _providerInvariantName;
+<% // BEGIN CUSTOMIZATION %>
+		private string _initialCatalog;
+<% // END CUSTOMIZATION %>
 		
 		/// <summary>
 		/// Initializes a new instance of the <see cref="SqlNetTiersProvider"/> class.
@@ -137,6 +140,25 @@ namespace <%=DALNameSpace%>.SqlClient
                 throw new ProviderException("Empty connection string");
 			}
 
+			<%// BEGIN TEMPLATE CUSTOMIZATION %>
+
+			// Attempt to get the initial catalog key, and if it exists, change the connection strings initial catalog.
+			_initialCatalog = config["initialCatalog"];
+
+			if (!string.IsNullOrEmpty(this.InitialCatalog))
+			{
+				// TODO: This should be abstracted so it can be used by other objects/processes/assemblies.
+				System.Text.RegularExpressions.Regex dbRegEx = new System.Text.RegularExpressions.Regex(@"Initial\sCatalog=(?<InitialCatalog>[^;\n]+)[;\n""]??", System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+				System.Text.RegularExpressions.Match m = dbRegEx.Match(this.ConnectionString);
+
+                if (m.Captures.Count > 0)
+					this.ConnectionString = this.ConnectionString.Replace(m.Value, string.Format("Initial Catalog={0}", this.InitialCatalog));
+                else
+					this.ConnectionString = string.Format("Initial Catalog={0};{1}", this.InitialCatalog, this.ConnectionString);
+            }
+			<%// END TEMPLATE CUSTOMIZATION %>		
+
 			#endregion
             
              #region "_providerInvariantName"
@@ -219,6 +241,17 @@ namespace <%=DALNameSpace%>.SqlClient
 				return true;
 			}
 		}
+
+		<%/* BEGIN TEMPLATE CUSTOMIZATION */%>
+		/// <summary>
+		/// Replaces the connection string's initial catalog if this property exists.
+		/// </summary>
+		public string InitialCatalog
+		{
+			get { return _initialCatalog; }
+			set { _initialCatalog = value; }
+		}
+		<%/* END TEMPLATE CUSTOMIZATION */%>
 
 		<% foreach(TableSchema SourceTable in SourceTables) { 
 			string className = GetClassName(SourceTable);

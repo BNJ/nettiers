@@ -585,16 +585,57 @@ namespace <%= DALNameSpace %>.Bases
 		/// <param name="entity">The Entity object to save.</param>
 		public virtual Entity <%= MethodNames.Save %>(TransactionManager mgr, Entity entity)
 		{
+<%// BEGIN CUSTOMIZATION %>
+			EntityBase baseEntity = entity as EntityBase;
+			EntityBase.EntitySaveAction action = EntityBase.EntitySaveAction.Unknown;
+			EntityBase.EntitySavedEventArgs argument;
+<%// END CUSTOMIZATION %>
 			switch ( entity.EntityState )
 			{
 				case EntityState.Deleted:
+<%// BEGIN CUSTOMIZATION %>
+					action = EntityBase.EntitySaveAction.Delete;
+					argument = new EntityBase.EntitySavedEventArgs(baseEntity, action);
+					baseEntity.OnEntitySaving(this, argument);
+					
+					//there has been a manual cancel of this save
+					if (argument.Cancel)
+						break;					
+<%// END CUSTOMIZATION %>
 					<%= MethodNames.Delete %>(mgr, entity);
+<%// BEGIN CUSTOMIZATION %>
+					baseEntity.OnEntitySaved(this, new EntityBase.EntitySavedEventArgs(baseEntity, action));
+<%// END CUSTOMIZATION %>
 					break;
 				case EntityState.Changed:
+<%// BEGIN CUSTOMIZATION %>
+					action = EntityBase.EntitySaveAction.Update;
+					argument = new EntityBase.EntitySavedEventArgs(baseEntity, action);
+					baseEntity.OnEntitySaving(this, argument);
+					
+					//there has been a manual cancel of this save
+					if (argument.Cancel)
+						break;
+<%// END CUSTOMIZATION %>
 					<%= MethodNames.Update %>(mgr, entity);
+<%// BEGIN CUSTOMIZATION %>
+					baseEntity.OnEntitySaved(this, new EntityBase.EntitySavedEventArgs(baseEntity, action));
+<%// END CUSTOMIZATION %>
 					break;
 				case EntityState.Added:
+<%// BEGIN CUSTOMIZATION %>
+					action = EntityBase.EntitySaveAction.Insert;
+					argument = new EntityBase.EntitySavedEventArgs(baseEntity, action);
+					baseEntity.OnEntitySaving(this, argument);
+					
+					//there has been a manual cancel of this save
+					if (argument.Cancel)
+						break;
+<%// END CUSTOMIZATION %>
 					<%= MethodNames.Insert %>(mgr, entity);
+<%// BEGIN CUSTOMIZATION %>
+					baseEntity.OnEntitySaved(this, new EntityBase.EntitySavedEventArgs(baseEntity, action));
+<%// END CUSTOMIZATION %>
 					break;
 			}
 			
