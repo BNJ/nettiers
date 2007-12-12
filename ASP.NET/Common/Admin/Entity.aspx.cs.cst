@@ -102,7 +102,7 @@ public partial class <%=entityName%> : System.Web.UI.Page
 				continue;
 			string keyType = GetCSType(SourceTable.PrimaryKey.MemberColumns[0]);	
 			string propertyName = GetPropertyName(col);
-			string parse = "TryParse";
+			string parse = String.Format("{0}.TryParse", keyType);
 			
 			if (keyType.ToLower().Contains("guid"))
 				parse = string.Format("{0}.{1}.EntityUtil.GuidTryParse", WebProjectNameSpace, BLLNameSpace);
@@ -116,7 +116,7 @@ public partial class <%=entityName%> : System.Web.UI.Page
 		<%= keyType %> key = contextKey;
 		<% }else { %>
 		<%= keyType %> key;
-		<%= keyType %>.<%= parse %>(contextKey, out key);
+		<%= parse %>(contextKey, out key);
 		<% } %>
         
         <%=WebProjectNameSpace%>.<%=BLLNameSpace%>.<%=entityName%> content 
