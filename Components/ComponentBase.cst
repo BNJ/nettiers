@@ -113,8 +113,16 @@
 		
 	// this array store each Get BY MemberColumns in order to avoid to create doublon Get methods
 	System.Collections.ArrayList getbyKeys = new System.Collections.ArrayList();
+
 // CUSTOM: Start customized non-netTiers method implementation
-	bool IsLoggable = (SourceTable.Name != "EntityEvent" && SourceTable.Name != "EntityEventDetail" && ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel);
+
+	// Tests to see if this table is loggable in the EntityEvent tracking tables. 
+	// Requires that the primary key be a single column of type Guid, and that the entity is not part of the entity tracking table structure.
+	bool IsLoggable = (SourceTable.Name != "EntityEvent" 
+							&& SourceTable.Name != "EntityEventDetail" 
+							&& ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel
+							&& SourceTable.PrimaryKey.MemberColumns.Count == 1
+							&& SourceTable.PrimaryKey.MemberColumns[0].DataType == System.Data.DbType.Guid);
 // CUSTOM: End customized non-netTiers method implementation
 %>
 
