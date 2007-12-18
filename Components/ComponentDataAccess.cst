@@ -695,7 +695,7 @@
         /// </code>
         /// </example>
 		[DataObjectMethod(DataObjectMethodType.<%= methodType %>)]
-		<%= IsServiceLayer ? interfaceImplModifier : constructorAccessModifierOnMembers %> <%= (action != MethodNames.Save ? "bool" : returnEntity) %> <%=partialClassInternalPrefix%><%= action %>(<%= memberMethodEntity %>)
+		<%= IsServiceLayer ? interfaceImplModifier : constructorAccessModifierOnMembers %> <%// CUSTOM CODE START %><%= action == MethodNames.Save ? "virtual " : ""%><%// CUSTOM CODE END %><%= (action != MethodNames.Save ? "bool" : returnEntity) %> <%=partialClassInternalPrefix%><%= action %>(<%= memberMethodEntity %>)
 		{
 			// throws security exception if not authorized
 			SecurityContext.IsAuthorized("<%= action %>");
