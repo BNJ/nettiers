@@ -795,6 +795,9 @@ SELECT <% for (int i = 0; i < primaryTable.Columns.Count; i++)
 				-- get total count
 				select count(*) as TotalRowCount from <%= fqTableName%> {0};
 			
+				<% if ( IncludeDatabaseFeatures != MoM.Templates.DatabaseType.SQLServer2005 ) { %>
+				DROP TABLE #PageIndex
+				<%}%>
 				END
 			]]></body>
 		</procedure>
@@ -1019,6 +1022,8 @@ SELECT <% for (int i = 0; i < primaryTable.Columns.Count; i++)
 
 				-- get total count
 				select count(*) as TotalRowCount from <%= fqTableName%> {0};
+				
+				
 				
 				<% } else { // SQL 2000 %>
 				SELECT * FROM <%= fqTableName%> {0}

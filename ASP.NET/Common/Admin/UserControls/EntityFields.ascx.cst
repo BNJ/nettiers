@@ -369,7 +369,7 @@ public string GetEditorControl(ColumnSchema column, string prefix, TableKeySchem
 			case DbType.Date: 
 			case DbType.DateTime:
 				//Return a textbox control
-				controlDecl = String.Format("<asp:TextBox runat=\"server\" ID=\"{0}\" Text='<%# Bind(\"{1}\", \"{2}\") %>' MaxLength=\"10\"></asp:TextBox>",controlID, propertyName, "{0:d}");
+				controlDecl = String.Format("<asp:TextBox runat=\"server\" ID=\"{0}\" Text='<%# (String.IsNullOrEmpty(Eval(\"{1}\", \"{2}\"))) ? DateTime.Now.ToString(\"{2}\") : Eval(\"{1}\", \"{2}\") %>' MaxLength=\"10\"></asp:TextBox>",controlID, propertyName, "0:MM/dd/yyyy HH:mm:ss}");
 				
 				//Add an image button to pick from a calendar
 				if (!IncludeAtlasToolkit) {
