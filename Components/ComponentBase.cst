@@ -42,6 +42,9 @@
 	
 <%@ Property Name="UsePartialClass" Type="System.Boolean" Default="true" Category="General" Description="Indicates if partial class should be generated." %>
 	
+<%@ Property Name="GenerateEntityTrackingCode" Type="System.Boolean" Default="false" Category="10. Custom Properties" Description="Indicates if the entity tracking (audit) tables should be generated." %>
+<% // NOTE: GenerateEntityTrackingCode is a custom property %>
+
 <%		
 	// Name of the Abstract Class
 	string className = GetClassName(SourceTable);
@@ -117,12 +120,14 @@
 // CUSTOM: Start customized non-netTiers method implementation
 
 	// Tests to see if this table is loggable in the EntityEvent tracking tables. 
-	// Requires that the primary key be a single column of type Guid, and that the entity is not part of the entity tracking table structure.
-	bool IsLoggable = (SourceTable.Name != "EntityEvent" 
+	// Requires that the primary key be a single column of type Guid, that the entity is not part of the entity tracking table structure.
+	// and that the createddate and lastupdateddate columns exist in the table schema.
+	bool IsLoggable = GenerateEntityTrackingCode && (SourceTable.Name != "EntityEvent" 
 							&& SourceTable.Name != "EntityEventDetail" 
 							&& ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel
 							&& SourceTable.PrimaryKey.MemberColumns.Count == 1
-							&& SourceTable.PrimaryKey.MemberColumns[0].DataType == System.Data.DbType.Guid);
+							&& SourceTable.PrimaryKey.MemberColumns[0].DataType == System.Data.DbType.Guid
+							&& defaultDateCols.Count == 2);
 // CUSTOM: End customized non-netTiers method implementation
 %>
 
@@ -176,10 +181,15 @@ namespace <%=NameSpace%>
 	[CLSCompliant(true)]
 	public <% if (UsePartialClass) Response.Write(" partial "); %>class <%=abstractClassName%> : <%=BLLNameSpace%>.<%= className%> , IComponentEntity
 	{
-<%// CUSTOM: Start customized non-netTiers method implementation%>
+<%
+// CUSTOM: Start customized non-netTiers method implementation
+
+if(IsLoggable) {
+%>
 		//variable used to decide if we should log actions to this entity
 		private bool _suppressLogging = false;
-<%// CUSTOM: End customized non-netTiers method implementation%>
+<% }
+// CUSTOM: End customized non-netTiers method implementation%>
 
 		#region Constructors
 		///<summary>
@@ -232,7 +242,10 @@ namespace <%=NameSpace%>
 		#region Properties	
 		
 		#region Entity Properties
-<%// CUSTOM: Start customized non-netTiers method implementation%>		
+<%// CUSTOM: Start customized non-netTiers method implementation
+
+if (IsLoggable) {
+%>		
 		/// <summary>
 		/// 	Gets or Sets the LoggingEnabled property. If false we don't generate an audit
 		///		trail for actions on this object.
@@ -248,7 +261,9 @@ namespace <%=NameSpace%>
 				_suppressLogging = value;
 			}
 		}
-<%// CUSTOM: End customized non-netTiers method implementation%>		
+<% }
+
+// CUSTOM: End customized non-netTiers method implementation%>		
 		<% for (int x=0; x < cols.Count; x++) { 
 			
 		string dataObjectFieldParams = GetDataObjectFieldCallParams(cols[x]);

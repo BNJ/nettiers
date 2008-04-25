@@ -1,4 +1,7 @@
-﻿<%@ CodeTemplate Src="..\TemplateLib\CommonSqlCode.cs" Inherits="MoM.Templates.CommonSqlCode" Language="C#" TargetLanguage="C#" Description="The interface that each business object of the domain implements." ResponseEncoding="UTF-8" NoWarn="0108,0618,1572,1573,1574,0162,2002"%>
+﻿<%--
+ * ADDED CUSTOM PROPERTY: GenerateEntityTrackingCode
+--%>
+<%@ CodeTemplate Src="..\TemplateLib\CommonSqlCode.cs" Inherits="MoM.Templates.CommonSqlCode" Language="C#" TargetLanguage="C#" Description="The interface that each business object of the domain implements." ResponseEncoding="UTF-8" NoWarn="0108,0618,1572,1573,1574,0162,2002"%>
 <%@ Assembly Name="SchemaExplorer" %>
 <%@ Import Namespace="SchemaExplorer" %>
 <%@ Assembly Name="System.Design" %>
@@ -6,6 +9,9 @@
 <%@ Property Name="NameSpace" Optional="False" Type="System.String" Category="Style" Description="Object Namespace." %>
 <%@ Property Name="BLLNameSpace" Optional="False" Type="System.String" Category="Style" Description="Object Namespace." %>
 <%@ Property Name="DALNameSpace" Optional="False" Type="System.String" Category="Style" Description="Repository Namespace." %>
+
+<%@ Property Name="GenerateEntityTrackingCode" Type="System.Boolean" Default="false" Category="10. Custom Properties" Description="Indicates if the entity tracking (audit) tables should be generated." %>
+
 <%@ Assembly Name="SchemaExplorer" %>
 using System;
 using System.Data;
@@ -42,7 +48,9 @@ namespace <%= NameSpace %>
 
             return builder.ToString();
         }		
-		<%// CUSTOM: Start customized non-netTiers method implementation%>
+		<%// CUSTOM: Start customized non-netTiers method implementation
+if(GenerateEntityTrackingCode) {
+%>
 		/// <summary>
 		/// Creates a pre-formated EntityEventDetail for use in the LogAuditEvent function.
 		/// </summary>
@@ -110,7 +118,8 @@ namespace <%= NameSpace %>
 
 			EntityEventDetail.Save(detailsToSave);
 		}
-		<%// CUSTOM: END customized non-netTiers method implementation%>
+		<%// CUSTOM: END customized non-netTiers method implementation
+}%>
 		
 		/// <summary>
 		/// Wraps call to tohe <see cref="ExceptionPolicy"/> class which handles all exceptions based on the security policy.

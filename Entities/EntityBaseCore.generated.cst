@@ -56,6 +56,126 @@ namespace <%=NameSpace%>
 		}
 		
       	#endregion
+
+<%// BEGIN CUSTOM CODE %>
+		#region Custom EntitySaving and EntitySaved Events
+		#region EntitySavedEventArgs class
+		/// <summary>
+		/// Provides data for the EntitySaved events.
+		/// </summary>
+		/// <remarks>
+		/// The EntitySavedEvent event occurs when the entity is saved.
+		/// </remarks>
+		public class EntitySavedEventArgs : System.EventArgs
+		{
+			private Entities.EntityBase entity;
+			private EntitySaveAction action;
+			private bool cancel;
+
+			///<summary>
+			/// Initalizes a new Instance of the EntitySavedEventArgs class.
+			///</summary>
+			public EntitySavedEventArgs(EntityBase entity, EntitySaveAction action)
+			{
+				this.entity = entity;
+				this.action = action;
+				this.cancel = false;
+			}
+
+			///<summary>
+			/// The Entity that was modified, which has raised the event.
+			///</summary>
+			public EntityBase Entity { get { return this.entity; } }
+
+			/// <summary>
+			/// Gets the Action which raised the event.
+			/// </summary>		
+			public EntitySaveAction Action { get { return this.action; } }
+
+			/// <summary>
+			/// Bool flag that cancels the entity save action.
+			/// </summary>
+			public bool Cancel
+			{
+				get { return this.cancel; }
+				set { this.cancel = value; }
+			}
+
+		}
+		#endregion
+
+		/// <summary>
+		/// Describes types of actions that can be applied to an entity by the Sql.Data tier.
+		/// </summary>
+		public enum EntitySaveAction
+		{
+			/// <summary>
+			/// Entity was inserted into db.
+			/// </summary>
+			Insert = 0,
+			/// <summary>
+			/// Entity was updated.
+			/// </summary>
+			Update = 1,
+			/// <summary>
+			/// Enity was deleted.
+			/// </summary>
+			Delete = 2,
+			/// <summary>
+			/// Enity was "Saved", but no changes were made.
+			/// </summary>
+			NoChange = 3,
+			/// <summary>
+			/// We don't know what happened to the entity.
+			/// </summary>
+			Unknown = 4
+		}
+
+		///<summary>
+		/// Define a delegate to call the EntitySaved events.
+		///</summary>
+		public delegate void EntitySavedEventHandler(object sender, EntitySavedEventArgs e);
+
+		/// <summary>
+		/// Define a delegate call the EntitySaving events.
+		/// </summary>
+		public delegate void EntitySavingEventHandler(object sender, EntitySavedEventArgs e);
+
+		/// <summary>
+		/// Event to indicate that a property has changed.
+		/// </summary>
+		[field: NonSerialized]
+		public event EntitySavedEventHandler EntitySaved;
+
+		/// <summary>
+		/// Event to indicate that a property has changed.
+		/// </summary>
+		[field: NonSerialized]
+		public event EntitySavingEventHandler EntitySaving;
+
+		/// <summary>
+		/// Called immediately after an entity is saved.
+		/// </summary>
+		public void OnEntitySaved(object sender, EntitySavedEventArgs e)
+		{
+			EntitySavedEventHandler handler = EntitySaved;
+			if (handler != null)
+				handler(sender, e);
+		}
+	
+		/// <summary>
+		/// Called before the entity is saved.
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		public void OnEntitySaving(object sender, EntitySavedEventArgs e)
+		{
+			EntitySavingEventHandler handler = EntitySaving;
+			if (handler != null)
+				handler(sender, e);
+		}
+		#endregion
+<%// END CUSTOM CODE %>
 		
 	    /// <summary>
 	    /// Determines whether the entity is being tracked by the Locator.

@@ -101,6 +101,11 @@
 <%-- 9.0 windows forms Library --%>
 <%@ Property Name="GenerateWinLibrary" Type="System.Boolean" Default="false" Category="09. Winforms Library - Advanced" Description="Indicates if the web library should be generated.  This contains the EntityDataSource and Other Helpful ASP.net utility classes." %>
 
+<%-- BEGIN CUSTOM PROPERTY --%>
+<%-- 10.0 windows forms Library --%>
+<%@ Property Name="GenerateEntityTrackingCode" Type="System.Boolean" Default="false" Category="10. Custom Properties" Description="Indicates if the entity tracking (audit) tables should be generated." %>
+<%-- END CUSTOM PROPERTY --%>
+
 <%-- Register Templates in framework --%>
 <!-- #include file="TemplateLib/FrameworkTemplates.cst" --> 
 
