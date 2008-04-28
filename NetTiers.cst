@@ -29,7 +29,8 @@
 <%@ Property Name="IncludeWCFDataAttributes" Type="System.Boolean" Default="False" Category="02. Framework Generation - Optional" Description="Indicates if the WCF attributes, [DataContract] and [DataMember], should be included on the entity classes." %>
 <%@ Property Name="SerializeEntityState" Type="System.Boolean" Default="False" Category="02. Framework Generation - Optional" Description="Indicates if the EntityState property should be included during serialization.  Useful if needing to know what state the entity is in over webservices." %>
 <%@ Property Name="EntLibVersion" Type="MoM.Templates.EntLibVersion" Default="v2" Category="02. Framework Generation - Optional" Description="Indicates the Enterprise Library version to use. Options include v2, v3 and v3.1" %>
-
+<%@ Property Name="VisualStudioVersion" Type="MoM.Templates.VSNetVersion" Default="v2005" Category="02. Framework Generation - Optional" Description="Indicates the Version of Visual Studio to target. Options include v2005 and v2008" %>
+<%@ Property Name="DotNetVersion" Type="MoM.Templates.DotNetFrameworkVersion" Default="v2" Category="02. Framework Generation - Optional" Description="Indicates the Version of Dot Net to target. Options include v2, v3 and v3.5" %>
 <%@ Property Name="IncludeXmlAttributes" Type="System.Boolean" Default="False" Category="02. Framework Generation - Optional" Description="Indicates if the Xml attributes, [XmlElement(IsNullable=true)], should be included on the entity classes." %>
 <%@ Property Name="CustomCodeFolderName" Type="System.String" Category="02. Framework Generation - Optional" Description="If specified, indicates the name of a folder that can contains custom classes to dynamically add to each project." Default="App_Code" %>
 
@@ -383,7 +384,7 @@
 
 	[Optional, NotChecked]
 	[Category("06b. Website - Advanced")]
-	[Description("Indicates the web admin sie name.")]
+	[Description("Indicates the web admin site name.")]
 	[DefaultValue("Application Name")]
 	public string WebAdminSiteName
 	{ 
@@ -503,18 +504,19 @@
 	[Obsolete("Visual studio 2005 is the only solution type for .net2 framework.")]
 	public bool IsTargetingVisualStudio2003
 	{
-		get {return this.vsnetVersion == VSNetVersion.v2003;}
-		set
-		{
-			if (value == true)
-			{
-				this.vsnetVersion = VSNetVersion.v2003;
-			}
-			else
-			{
-				this.vsnetVersion = VSNetVersion.v2005;
-			}
-		}	
+		get { return false; }
+		//get {return this.vsnetVersion == VSNetVersion.v2003;}
+		//set
+		//{
+		//	if (value == true)
+		//	{
+		//		this.vsnetVersion = VSNetVersion.v2003;
+		//	}
+		//	else
+		//	{
+		//		this.vsnetVersion = VSNetVersion.v2005;
+		//	}
+		//}	
 	}
 	
 	#endregion
@@ -526,13 +528,6 @@
 		ReadUncommitted,
 		RepeatableRead,
 		Serializable
-	}
-	
-	[Obsolete("Visual studio 2005 is the only solution type for .net2 framework.")]
-	public enum VSNetVersion
-	{
-		v2003
-		,v2005
 	}
 	
 	[Obsolete("Separated project is automatically used.")]
@@ -559,21 +554,22 @@
 	}
 </script>
 
-
 <script runat="template">
+
+	#region Fields
 	private string sdkInstallRoot;
+	VSNetIntegration vsnetIntegration  = VSNetIntegration.SeparatedProjects;
+	
 	public bool GenerateBusinessLogicLayer = true;	
 	public bool GenerateDataAccessLayer = true;
     public bool GenerateSql = true;
+	#endregion Fields    
     
-    // for the xml report
+    #region xml report fields
     public XmlDocument docOutput;
     public DateTime startTime = DateTime.Now;
 	public DateTime lastTime = DateTime.Now;
-    // end xml report
-    
-	VSNetIntegration vsnetIntegration  = VSNetIntegration.SeparatedProjects;
-    VSNetVersion vsnetVersion = VSNetVersion.v2005;
+    #endregion xml report fields
 
     //TextPad Regex for template listing array.  Used to convert to FrameWorkTemplates.cst
 	//\t\t\t\t\t\t\t\t\t\t\t\t\t\t"\(.*\\\\\)?\(.*\).cst",
@@ -590,6 +586,7 @@
 	    Private
 	}
 
+	#region Template related methods
 	public void RenderToFile(string templateName, string path, bool overwrite)
 	{
 		this._CurrentFileName = path;
@@ -626,7 +623,6 @@
 		}
 	}
 
-		
 public CodeTemplate GetTemplate(string templateType)
 {
 	return CodeTemplates[templateType];
@@ -636,25 +632,19 @@ public MoM.Templates.CommonSqlCode GetTemplateBase(string templateType)
 {
 	return (MoM.Templates.CommonSqlCode) GetTemplate(templateType);
 }
+	#endregion Template related methods
 
 /// <summary>
-/// The main function that do the generation process for each table and view.
+	/// The main function that does the generation process for each table and view.
 /// </summary>
 public void Go()
 {	
+		#region Initialisation - including building list of tables to process
 	this.vsnetIntegration = VSNetIntegration.SeparatedProjects;
-	this.vsnetVersion = VSNetVersion.v2005;
 	RelationshipDictionary.Clear();
 	
 	_CurrentPhase = "Initialization";
 	DebugWriteLine("Current Phase: " + _CurrentPhase);
-	
-	// some settings are only targeting framework 2
-	if (vsnetVersion != VSNetVersion.v2005)
-	{
-		UsePartialClass = false;
-		OverwritePartialClassStub = false;
-	}
 	
 	MoM.Templates.ComponentPatternType ComponentPattern = IncludeComponentLayer;
 
@@ -681,7 +671,7 @@ public void Go()
 	
 	#endregion
 	
-	// Build Namespaces
+		#region Build Namespaces
 	if (BusinessLogicLayerNameSpace == null) BusinessLogicLayerNameSpace = string.Empty;
 	string BLLNameSpace = NameSpace + (BusinessLogicLayerNameSpace.Length>0 ? "." + GetCleanName(BusinessLogicLayerNameSpace) : string.Empty);
 	string ComponentsNameSpace = NameSpace + (this.ComponentLayerNameSpace.Length> 0 ? "." + GetCleanName(ComponentLayerNameSpace) : string.Empty);
@@ -698,9 +688,9 @@ public void Go()
 	string SQLNamespace = NameSpace + "." +  (SQLFolderName.Length > 0 ?  SQLFolderName : "SQL");
 	
 	string factoryType = (ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel ? string.Format("{0}.{1}", ComponentsNameSpace, "ComponentEntityFactory") : string.Format("{0}.{1}", BLLNameSpace, "EntityFactory")); 
+		#endregion Build Namespaces
 
-
-	// Build output pathes
+		#region Build output paths
 	string rootPathBLL = OutputDirectory + "\\" + BLLNameSpace;
 	string rootPathComponents = OutputDirectory + "\\" +  ComponentsNameSpace;
 	string rootPathDAL = OutputDirectory + "\\" + DALNameSpace;
@@ -716,6 +706,8 @@ public void Go()
 	string rootPathWS  = WebServiceOutputPath; 
 	string specialPath = vsnetIntegration == VSNetIntegration.SeparatedProjects ? ((IncludeUnitTest != MoM.Templates.UnitTestStyle.None) ? rootPathUT : rootPathDAL) : OutputDirectory;
 	
+		#endregion Build output paths
+		
 	bool HasCustomCode = (CustomCodeFolderName != null && CustomCodeFolderName.Trim().Length > 0 );
 	if (ProcedurePrefix == null)	ProcedurePrefix = string.Empty;
 	if (WebServiceUrl == null) WebServiceUrl = string.Empty;
@@ -779,12 +771,9 @@ public void Go()
 	
 	XmlElement parametersNode = AddMessageNode(initNode, 0, "Validating parameters.", false);
 		
+		#region Build the correct list of used tables (filtering tables without primary key)
 	_CurrentPhase = "Check datasource";
 	DebugWriteLine("Current Phase: "+_CurrentPhase);
-	
-	// ----------------------------------------------------------------------------
-	// Build the correct list of used tables (filtering tables without primary key)
-	// ----------------------------------------------------------------------------
 	//Entire Database
 	if (SourceDatabase != null && (SourceTables == null || SourceTables.Count == 0) && (SourceViews == null || SourceViews.Count == 0))
 	{
@@ -806,11 +795,11 @@ public void Go()
 		if (SourceTables == null) templateSourceTables = new TableSchemaCollection();
 		if (SourceViews == null) templateSourceViews = new ViewSchemaCollection();
 	}
+		#endregion Build the correct list of used tables (filtering tables without primary key)
 	
+		#region Remove tables with no primary key
+		TableSchemaCollection _tmp = (TableSchemaCollection)templateSourceTables.Clone();	 
 	
-	// Remove tables with no primary key
-	
-	TableSchemaCollection _tmp = (TableSchemaCollection)templateSourceTables.Clone();	 
 	for (int i=0; i < _tmp.Count; i++)
 	{
 		try
@@ -837,16 +826,19 @@ public void Go()
 			DebugWriteLine("ApplicationException: "+e.Message);
 		}
 	}
+		#endregion Remove tables with no primary key
 	
 	//Sort by dependancy
 	templateSourceTables.Sort(new SchemaExplorer.TableDependancyComparer());
+		#endregion Initialisation - including building list of tables to process
 	
-	// if no tables, exit;		
+		#region Check if there is anything to do, if not then exit;		
 	if (templateSourceTables.Count == 0 && templateSourceViews.Count == 0)
 	{
 		AddMessageNode(initNode, 2, "No valid tables in the selection.", true);
 		return;
 	}
+		#endregion Check if there is anything to do, if not then exit;		
 
 	#region Entity Mapping 
 
@@ -881,7 +873,7 @@ public void Go()
 	
 	SetProgress(templateSourceTables.Count + templateSourceViews.Count + (167 * 2) /*167 templates or so 1 for compiling, 1 for property setting */ );
 	
-	// load all the sub templates
+		#region Load templates
 	XmlElement templatesNode = AddMessageNode(initNode, 0, "Loading templates.", false);
 	_CurrentPhase = "Templates compilation";
 	DebugWriteLine("Current Phase: "+_CurrentPhase);
@@ -889,9 +881,9 @@ public void Go()
 	// Load All of the Templates
 	LoadTemplates();
 	AddExecutionTime(templatesNode);
+		#endregion Load templates	
 	
-	
-	// check the enum tables format (int + text)
+		#region Check the enum tables format (int + text)
 	if (templateEnumTables == null) templateEnumTables = new TableSchemaCollection();	
 	TableSchemaCollection _enums = (TableSchemaCollection)templateEnumTables.Clone(); //new TableSchemaCollection();
 	for (int i=0; i < _enums.Count; i++)
@@ -899,7 +891,6 @@ public void Go()
 		try
 		{
 			ValidForEnum(_enums[i]);
-			//Response.Write("table is valide");
 		}
 		catch(Exception e)
 		{
@@ -908,17 +899,17 @@ public void Go()
 			DebugWriteLine("ApplicationException: "+e.Message);
 		}
 	}
+		#endregion Check the enum tables format (int + text)	
 	
+		#region Create directories and copy dependencies
 	_CurrentPhase = "CREATING FOLDERS AND COPYING DEPENDENCIES ";
 	DebugWriteLine("Current Phase: "+_CurrentPhase);
 	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	// CREATING FOLDERS AND COPYING DEPENDENCIES.
-	//----------------------------------------------------------------------------------------------------------------------------------------------
 	AddMessageNode(initNode, 0, "Creating folders and copying dependencies.", false);
 	string libPath = Path.GetFullPath(Path.Combine(OutputDirectory, LibraryPath));
 	SafeCreateDirectory(libPath);
 	
+		#region Set up Entity directories
 	if(GenerateBusinessLogicLayer)
 	{
 		SafeCreateDirectory(rootPathBLL);
@@ -930,7 +921,9 @@ public void Go()
 			SafeCreateDirectory(rootPathBLL + "\\" + CustomCodeFolderName);
 		}
 	}
+		#endregion Set up Entity directories	
 		
+		#region Set up Component directories
 	if (ComponentPattern != MoM.Templates.ComponentPatternType.None)
 	{
 		SafeCreateDirectory(rootPathComponents);
@@ -943,7 +936,9 @@ public void Go()
 			SafeCreateDirectory(rootPathComponents + "\\" + CustomCodeFolderName);
 		}
 	}
+		#endregion Set up Component directories
 	
+		#region Set up DAL directories
 	if (GenerateDataAccessLayer)
 	{
 		// base classes for any provider implementations
@@ -971,7 +966,6 @@ public void Go()
 		else
 		{
 			SafeCreateDirectory(rootPathDALGeneric);
-			
 			SafeCreateDirectory(rootPathDALGeneric + "\\Views");
 
 			if ( HasCustomCode )
@@ -980,7 +974,7 @@ public void Go()
 			}
 		}
 		
-		// ws implementation
+			#region web service directories
 		if (GenerateWebservice)
 		{
 			SafeCreateDirectory(rootPathDALWS);
@@ -997,8 +991,11 @@ public void Go()
 			//SafeCreateDirectory(rootPathDAL + "\\WebServiceClient\\Views");
 			//SafeCreateDirectory(specialPath + "\\Web References\\WsProxy");
 		}
+			#endregion web service directories
 	}
+		#endregion Set up DAL directories	
 	
+		#region Set up unit test directories
 	if (IncludeUnitTest != MoM.Templates.UnitTestStyle.None)
 	{
 		SafeCreateDirectory(rootPathUT);
@@ -1009,12 +1006,16 @@ public void Go()
 			SafeCreateDirectory(rootPathUT + "\\" + CustomCodeFolderName);
 		}
 	}
+		#endregion Set up unit test directories	
 	
+		#region Set up Sql directories
 	if (GenerateSql)
 	{
 		SafeCreateDirectory(rootPathSQL);
 	}
+		#endregion Set up Sql directories	
 	
+		#region Set up web service directories
 	if (GenerateWebservice)
 	{
 		SafeCreateDirectory(rootPathWS);
@@ -1027,14 +1028,18 @@ public void Go()
 		
 		// TODO check if the virtual directory exists, if not create it.
 	}	
+		#endregion Set up web service directories	
 	
+		#region Set up win library directories
 	if (GenerateWinLibrary)
 	{
 		SafeCreateDirectory(rootPathWinLib);
 		SafeCreateDirectory(rootPathWinLib + "\\Data");
 		SafeCreateDirectory(rootPathWinLib + "\\UI");
 	}
+		#endregion Set up win library directories
 		
+		#region Set up web library directories
 	if (GenerateWebLibrary)
 	{
 		SafeCreateDirectory(rootPathWebLib);
@@ -1050,7 +1055,9 @@ public void Go()
 			SafeCreateDirectory(rootPathWebLib + "\\" + CustomCodeFolderName);
 		}
 	}
+		#endregion Set up web library directories
 	
+		#region Set up website directories
 	if (GenerateWebsite)
 	{
 		SafeCreateDirectory(rootPathWebsite);
@@ -1098,14 +1105,11 @@ public void Go()
 			SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\ASP.NET\\Common\\aspx\\Default.aspx.cs", rootPathWebsite + "\\Admin\\Default.aspx.cs");
 		}
 	}
+		#endregion Set up website directories
 		
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	// Copy Data Access Layer dependencies
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	
-
-	//Copy References
+		#region Copy References
 		string entLibSubDir = string.Format("EntLib{0}", EntLibVersion.ToString());
+	
 		SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\References\\" + entLibSubDir + "\\Microsoft.Practices.EnterpriseLibrary.Common.dll", libPath + "\\Microsoft.Practices.EnterpriseLibrary.Common.dll");
 		SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\References\\" + entLibSubDir + "\\Microsoft.Practices.EnterpriseLibrary.Data.dll", libPath+ "\\Microsoft.Practices.EnterpriseLibrary.Data.dll");
 		SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\References\\" + entLibSubDir + "\\Microsoft.Practices.ObjectBuilder.dll", libPath +  "\\Microsoft.Practices.ObjectBuilder.dll");
@@ -1119,17 +1123,16 @@ public void Go()
 		SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\References\\" + entLibSubDir + "\\Microsoft.Practices.EnterpriseLibrary.ExceptionHandling.Logging.dll", libPath + "\\Microsoft.Practices.EnterpriseLibrary.ExceptionHandling.Logging.dll");
 		// NUnit file
 		SafeCopyFile(this.CodeTemplateInfo.DirectoryName + "\\References\\nunit.framework.dll", libPath + "\\nunit.framework.dll");
-	
+		#endregion Copy References
 
 	AddExecutionTime(initNode);
-	//----------------------------------------------------------------------------------------------------------------------------------------------
 	
+		#endregion Create directories and copy dependencies
 	
+		#region Code generation
 	_CurrentPhase = "Generating global file ";
 	DebugWriteLine("Current Phase: "+_CurrentPhase);
 	
-	//------------------------
-	// start code generation
 	System.Xml.XmlElement commonNode = docOutput.CreateElement("common");
 	XmlAttribute att2 = docOutput.CreateAttribute("startTime");
 	att2.Value = DateTime.Now.ToFileTime().ToString();
@@ -1157,6 +1160,7 @@ public void Go()
 	this.GetTemplate("VList.cst").SetProperty("NameSpace", BLLNameSpace);
 	this.RenderToFile("VList.cst", rootPathBLL + "\\Views\\VList.cs", true);
 	
+		#region Entity Classes 1
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- IEntity interface file
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1167,7 +1171,6 @@ public void Go()
 	//this.GetTemplate("IEntity.cst").RenderToFile(rootPathBLL + "\\IEntity.cs", true);
 	this.RenderToFile("IEntity.cst", rootPathBLL + "\\IEntity.cs", true);
 
-		
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- IEntityId
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1230,6 +1233,7 @@ public void Go()
 	XmlElement iEntityManagerNode = AddFileNode(commonNode, "EntityManager.cs");
 	this.GetTemplate("EntityManager.cst").SetProperty("NameSpace", BLLNameSpace);
 	this.RenderToFile("EntityManager.cst", rootPathBLL + "\\EntityManager.cs", true);
+		#endregion Entity Classes 1
 							
 	
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1263,7 +1267,7 @@ public void Go()
 	this.GetTemplate("ValidationRules.cst").SetProperty("NameSpace", BLLNameSpace);
 	this.RenderToFile("ValidationRules.cst", rootPathBLL + "\\Validation\\ValidationRules.cs", true);
 	
-	
+		#region Entity Classes 2
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- EntityBaseCore file
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1302,6 +1306,7 @@ public void Go()
 		this.GetTemplate("EntityKeyBase.cst").SetProperty("BLLNameSpace", BLLNameSpace);
 		this.RenderToFile("EntityKeyBase.cst", rootPathBLL + "\\EntityKeyBase.cs", true);
 	}
+		#endregion Entity Classes 2
 	
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- Components - Singe File Copy Overs
@@ -1407,6 +1412,7 @@ public void Go()
 		}
 	} // end if component/
 
+		#region Entity Classes 3
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- EntityFilter class
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -1427,10 +1433,9 @@ public void Go()
 	XmlElement converterNode = AddFileNode(commonNode, "GenericTypeConverter.cs");
 	this.GetTemplate("GenericTypeConverter.cst").SetProperty("NameSpace", BLLNameSpace);
 	this.RenderToFile("GenericTypeConverter.cst", rootPathBLL + "\\GenericTypeConverter.cs", true);
+		#endregion Entity Classes 3
 	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Stored procedures
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Stored procedures
 	if (GenerateSql)
 	{
 		if (_netTiersSqlProvider)
@@ -1611,17 +1616,13 @@ public void Go()
 		
 		#endregion
 	}
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#endregion Stored procedures
 	
-	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	// Generates common dataaccesslayer c-sharp files
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Generate common dataaccesslayer
 	if (GenerateDataAccessLayer)
 	{
-		
 		// Generates the configuration files
-		string configFile = "App." + (vsnetVersion == VSNetVersion.v2005 ? "config.2005" : "config") + ".cst";
+			string configFile = "App.config.2005.cst";
 		
 		// Configuration files for the unit test project
 		if (IncludeUnitTest != MoM.Templates.UnitTestStyle.None)
@@ -1682,6 +1683,7 @@ public void Go()
 		this.GetTemplate("DataRepository.cst").SetProperty("SourceTables", templateSourceTables);
 		this.GetTemplate("DataRepository.cst").SetProperty("SourceViews", templateSourceViews);
 		this.GetTemplate("DataRepository.cst").SetProperty("IncludeDesignTimeSupport", IncludeDesignTimeSupport);
+			this.GetTemplate("DataRepository.cst").SetProperty("VisualStudioVersion", VisualStudioVersion);
 		this.RenderToFile("DataRepository.cst", rootPathDAL + "\\DataRepository.cs", true);
 		
 		AddFileNode(commonNode, "IEntityProvider.cs");
@@ -1816,11 +1818,9 @@ public void Go()
 			this.RenderToFile("WsNetTiersProvider.cst", rootPathDALWS + "\\WsNetTiersProvider.cs", true);
 		}
 	}
+		#endregion Generate common dataaccesslayer
 	
-	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Generating ASP.NET Webservice
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Generating ASP.NET Webservice
 	if (GenerateWebservice)
 	{
 		if (this.IncludeComponentLayer == MoM.Templates.ComponentPatternType.ServiceLayer)
@@ -1889,21 +1889,19 @@ public void Go()
 		//this.GetTemplate("Web.config.cst").RenderToFile(rootPathWS + "\\Web.config", true);
 		
 		// The WebInfo file for the WebService
-		if (vsnetVersion != VSNetVersion.v2005)
-		{
-			this.GetTemplate("WebInfo.cst").SetProperty("WebServiceUrl", WebServiceUrl);
-			this.GetTemplate("WebInfo.cst").SetProperty("NameSpace", NameSpace);
-			this.GetTemplate("WebInfo.cst").SetProperty("DataAccessLayerNameSpace", DataAccessLayerNameSpace);
+			//if (vsnetVersion != VSNetVersion.v2005)
+			//{
+			//	this.GetTemplate("WebInfo.cst").SetProperty("WebServiceUrl", WebServiceUrl);
+			//	this.GetTemplate("WebInfo.cst").SetProperty("NameSpace", NameSpace);
+			//	this.GetTemplate("WebInfo.cst").SetProperty("DataAccessLayerNameSpace", DataAccessLayerNameSpace);
 			//this.GetTemplate("WebInfo.cst").RenderToFile(rootPathWS + "\\" + NameSpace + "." + (DataAccessLayerNameSpace.Length>0 ? DataAccessLayerNameSpace : "DataAccessLayer") + ".WebService.csproj.webinfo", true);		
-			this.RenderToFile("WebInfo.cst", rootPathWS + "\\" + NameSpace + "." + (DataAccessLayerNameSpace.Length>0 ? DataAccessLayerNameSpace : "DataAccessLayer") + ".WebService.csproj.webinfo", true);
-		}
+			//	this.RenderToFile("WebInfo.cst", rootPathWS + "\\" + NameSpace + "." + (DataAccessLayerNameSpace.Length>0 ? DataAccessLayerNameSpace : "DataAccessLayer") + ".WebService.csproj.webinfo", true);
+			//}
 	}
 	
+		#endregion Generating ASP.NET Webservice
 	
-	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Web Library Classes
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Web Library Classes
 	if ( GenerateWebLibrary )
 	{
 		// Web.Data
@@ -2051,6 +2049,7 @@ public void Go()
 		this.GetTemplate("SqlParameter.cst").SetProperty("WebNameSpace", WebLibNameSpace);
 		this.RenderToFile("SqlParameter.cst", rootPathWebLib + "\\Data\\SqlParameter.cs", true);
 		
+			#region Generate DAL
 		if ( GenerateDataAccessLayer )
 		{
 			SetCommonProperties("TableDataSource.cst");
@@ -2086,6 +2085,7 @@ public void Go()
 				this.RenderToFile("ViewDataSource.cst", rootPathWebLib + "\\DataSourceControls\\Views\\" + GetClassName(view) + "DataSource.cs", true);
 			}
 		}
+			#endregion Generate DAL
 		
 		// Web.UI
 		if ( !File.Exists(rootPathWebLib + "\\UI\\FormUtil.cs") )
@@ -2149,7 +2149,7 @@ public void Go()
 		this.GetTemplate("HyperlinkField.cs.cst").SetProperty("RootNameSpace", RootNameSpace);	
 		this.RenderToFile("HyperlinkField.cs.cst", rootPathWebLib + "\\UI\\HyperlinkField.cs", true);
 		
-		// Generated strongly typed repeater
+			#region Generated strongly typed repeater
 		if ( GenerateDataAccessLayer )
 		{
 			SetCommonProperties("TableRepeater.cst");
@@ -2176,10 +2176,14 @@ public void Go()
 				this.RenderToFile("ViewRepeater.cst", rootPathWebLib + "\\UI\\RepeaterControls\\Views\\" + GetClassName(view) + "Repeater.cs", true);
 			}
 		}
+			
+			#endregion Generated strongly typed repeater
+			
 	}
 	
+		#endregion Web Library Classes
 	
-	
+		#region Generate WebSite
 	if ( GenerateWebsite )
 	{
 		string webConfigTemplate = IncludeAtlasLibrary ? "WebConfigAtlas.cst" : "WebConfig.cst";
@@ -2197,8 +2201,6 @@ public void Go()
 			this.GetTemplate(webConfigTemplate).SetProperty("NetTiersSqlProvider", _netTiersSqlProvider);
 			this.GetTemplate(webConfigTemplate).SetProperty("ProviderInvariantName", _providerInvariantName);
 			this.GetTemplate(webConfigTemplate).SetProperty("EntLibVersion", EntLibVersion);
-			
-			
 			
 			if ( IncludeAtlasLibrary )
 			{
@@ -2239,10 +2241,9 @@ public void Go()
 			}
 		}
 		
-		// Generate WebAdmin
+			#region Generate WebAdmin
 		if (GenerateWebsiteAdmin)
 		{
-			
 			for (int x=0; x < templateSourceTables.Count; x++)
 			{
 				TableSchema SourceTable = templateSourceTables[x];								
@@ -2329,9 +2330,13 @@ public void Go()
 			this.GetTemplate("admin.master.cst").SetProperty("CompanyURL", CompanyURL);	
 			this.RenderToFile("admin.master.cst", rootPathWebsite + "\\MasterPages\\admin.master", true);						
 		}
-		// ---------------------------------------------------------------------------------
+			#endregion Generate WebAdmin
+		
 	}
 	
+		#endregion Generate WebSite
+		
+		#region Generate Win Library
 	if (GenerateWinLibrary)
 	{
 		// TypedDataSource
@@ -2387,7 +2392,9 @@ public void Go()
 		}
 	}
 	
+		#endregion Generate Win Library
 	
+		#region Set Guids
 	// Hard coded Guid make it easier to maintain solution when regenerating projects
 	// It may be intersting to put those value in global properties
 	string bllGuid = "20E43088-4618-4F4A-B8AD-FC31B50D94CD"; //Guid.NewGuid().ToString();
@@ -2401,16 +2408,16 @@ public void Go()
     string websiteGuid = "1DCAB031-308A-4581-AFA8-BD29F45A1357";
     string componentGuid = "794327CE-DC0A-4381-89EE-4C00AFB08D5A"; 
 	string winLibGuid = "43FE3BE8-3E46-47CA-8494-473315867DD0"; //Guid.NewGuid().ToString();
+		#endregion Set Guids
     
-	string projectTemplate = vsnetVersion == VSNetVersion.v2005 ? "vsnet2005.project.cst" : "vsnet2003.project.cst";
-	string solutionTemplate = vsnetVersion == VSNetVersion.v2005 ? "vsnet2005.solution.cst" : "vsnet2003.solution.cst";
+		#region Set solution and project template names
+		string projectTemplate = "vsnet2005.project.cst";
+		string solutionTemplate = "vsnet2005.solution.cst";
 	string vsmdiTemplate = "vsnet2005.vsmdi.cst";
 	string testrunconfigTemplate = "vsnet2005.localtestrun.testrunconfig.cst";
+		#endregion Set solution and project template names
 		
-	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Generating VS.Net solution
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Generate VS.Net solution
 	if (!File.Exists(OutputDirectory + "\\" + NameSpace + ".sln"))
 	{
 		AddFileNode(commonNode,  NameSpace + ".sln");
@@ -2426,7 +2433,6 @@ public void Go()
 		this.GetTemplate(solutionTemplate).SetProperty("WebsiteNameSpace", WebsiteNameSpace);
 		this.GetTemplate(solutionTemplate).SetProperty("UTNameSpace", UTNameSpace);
 		this.GetTemplate(solutionTemplate).SetProperty("WSNameSpace", WSNameSpace);
-		
 		this.GetTemplate(solutionTemplate).SetProperty("BLLGuid", bllGuid);
 		this.GetTemplate(solutionTemplate).SetProperty("DALGuid", dalGuid);
 		this.GetTemplate(solutionTemplate).SetProperty("DALSqlGuid", DALSqlGuid);
@@ -2437,12 +2443,10 @@ public void Go()
 		this.GetTemplate(solutionTemplate).SetProperty("WebLibGuid", webLibGuid);
 		this.GetTemplate(solutionTemplate).SetProperty("WebsiteGuid", websiteGuid);
 		this.GetTemplate(solutionTemplate).SetProperty("WinLibGuid", winLibGuid);
-		
 		this.GetTemplate(solutionTemplate).SetProperty("ComponentsGuid", componentGuid);
 		this.GetTemplate(solutionTemplate).SetProperty("ComponentPattern", IncludeComponentLayer);
 		this.GetTemplate(solutionTemplate).SetProperty("ComponentLayerNameSpace", ComponentsNameSpace);
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeComponents", (IncludeComponentLayer != MoM.Templates.ComponentPatternType.None));
-		
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeBll", GenerateBusinessLogicLayer);
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeDALBase", GenerateDataAccessLayer);	
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeSqlClient", GenerateDataAccessLayer && _netTiersSqlProvider);	
@@ -2454,21 +2458,17 @@ public void Go()
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeUnitTest", IncludeUnitTest);
 		this.GetTemplate(solutionTemplate).SetProperty("UseWebAppProject", UseWebAppProject);
 		this.GetTemplate(solutionTemplate).SetProperty("IncludeWinLibrary", GenerateWinLibrary);
-				
 		this.GetTemplate(solutionTemplate).SetProperty("WebServiceUrl", WebServiceUrl);
 		this.GetTemplate(solutionTemplate).SetProperty("rootPathWS", rootPathWS);
-
 		this.GetTemplate(solutionTemplate).SetProperty("SignAssembly", SignAssembly);
 
-		//this.GetTemplate(solutionTemplate).RenderToFile(OutputDirectory + "\\" + NameSpace + ".sln", true);
 		this.RenderToFile(solutionTemplate, OutputDirectory + "\\" + NameSpace + ".sln", true);
 	}
+		#endregion Generate VS.Net solution
 		
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Generating VS.Net projects
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Generate VS.Net projects
 
-	// BEGIN: common project properties
+		#region Common project properties
 	this.GetTemplate(projectTemplate).SetProperty("SourceDatabase", SourceDatabase);
 	this.GetTemplate(projectTemplate).SetProperty("SourceTables", templateSourceTables);
 	this.GetTemplate(projectTemplate).SetProperty("SourceViews", templateSourceViews);
@@ -2518,9 +2518,9 @@ public void Go()
 	string libRelPath = RelativePathTo(otherPath, rootPath);
 	this.GetTemplate(projectTemplate).SetProperty("LibraryPath", libRelPath);
 			
-	// END: common project properties
+		#endregion Common project properties	
 	
-	// Entities project
+		#region Components project
 	if (ComponentPattern != MoM.Templates.ComponentPatternType.None) 
 	{
 		AddFileNode(commonNode, ComponentLayerNameSpace + ".csproj");
@@ -2541,9 +2541,9 @@ public void Go()
 											
 		this.RenderToFile(projectTemplate, rootPathComponents + "\\" + ComponentsNameSpace + ".csproj", true);
 	}
+		#endregion Components project
 
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	
+		#region Entities project
 	if (GenerateBusinessLogicLayer) // && !File.Exists(rootPathBLL + "\\" + NameSpace + ".csproj"))
 	{
 		AddFileNode(commonNode, BLLNameSpace + ".csproj");
@@ -2569,11 +2569,12 @@ public void Go()
 		//this.GetTemplate(projectTemplate).RenderToFile(rootPathBLL + "\\" + BLLNameSpace + ".csproj", true);
 		this.RenderToFile(projectTemplate, rootPathBLL + "\\" + BLLNameSpace + ".csproj", true);
 	}
+		#endregion Entities project
 		
-	// DAL only project file
+		#region Data Access project
 	if (GenerateDataAccessLayer) // && !File.Exists(rootPathDAL + "\\" + NameSpace + ".DataAccessLayer.csproj"))
 	{
-		// dal base
+			#region Data Access Layer base
 		AddFileNode(commonNode, DALNameSpace + "." + DataAccessLayerNameSpace + ".csproj");
 
 		this.GetTemplate(projectTemplate).SetProperty("IncludeBll", false);
@@ -2590,12 +2591,10 @@ public void Go()
 		this.GetTemplate(projectTemplate).SetProperty("IncludeWCFDataAttributes", false);
 		this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", IncludeDesignTimeSupport);
 
-		//this.GetTemplate(projectTemplate).RenderToFile(rootPathDAL + "\\" + DALNameSpace + ".csproj", true);
 		this.RenderToFile(projectTemplate, rootPathDAL + "\\" + DALNameSpace + ".csproj", true);
+			#endregion Data Access Layer base
 		
-		;
-		
-		// DAL sqlclient
+			#region Sql client
 		if (_netTiersSqlProvider == true)
 		{
 		AddFileNode(commonNode, BLLNameSpace + "."+DataAccessLayerNameSpace+".SqlClient.csproj");
@@ -2613,11 +2612,11 @@ public void Go()
 		this.GetTemplate(projectTemplate).SetProperty("IncludeWCFDataAttributes", false);
 		this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", false);
 		
-		//this.GetTemplate(projectTemplate).RenderToFile(rootPathDALSql + "\\" + DALSqlNameSpace + ".csproj", true);
 		this.RenderToFile(projectTemplate, rootPathDALSql + "\\" + DALSqlNameSpace + ".csproj", true);
 		}
+			#endregion Sql client
 		
-		// DAL Genericclient
+			#region Generic client
 		if (_netTiersSqlProvider == false)
 		{
 			AddFileNode(commonNode, BLLNameSpace + "."+DataAccessLayerNameSpace+".GenericClient.csproj");
@@ -2635,39 +2634,13 @@ public void Go()
 			this.GetTemplate(projectTemplate).SetProperty("IncludeWCFDataAttributes", false);
 			this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", false);
 		
-			//this.GetTemplate(projectTemplate).RenderToFile(rootPathDALSql + "\\" + DALSqlNameSpace + ".csproj", true);
 			this.RenderToFile(projectTemplate, rootPathDALGeneric + "\\" + DALGenericNameSpace + ".csproj", true);
 		}
+			#endregion Generic client		
 		
-		
-		/*--------------------
-			WebServiceClient
-		-----------------------*/
+			#region	Web Service Client
 		if (GenerateWebservice)
 		{
-			// webservice csproj is not needed with vs2005
-			if (vsnetVersion != VSNetVersion.v2005)
-			{
-				AddFileNode(commonNode, rootPathWS + "\\" + NameSpace + "." + DataAccessLayerNameSpace + ".WebService.csproj");
-				
-				this.GetTemplate(projectTemplate).SetProperty("IncludeBll", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeDALBase", false);	
-				this.GetTemplate(projectTemplate).SetProperty("IncludeSqlClient", false);			
-				this.GetTemplate(projectTemplate).SetProperty("IncludeGenericClient", false);	
-				this.GetTemplate(projectTemplate).SetProperty("IncludeWebservice", true);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeWebserviceClient", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeComponents", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeWebLibrary", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeWebsite", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeUnitTest", MoM.Templates.UnitTestStyle.None);			
-				this.GetTemplate(projectTemplate).SetProperty("IncludeWCFDataAttributes", false);
-				this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", false);
-
-				//this.GetTemplate(projectTemplate).RenderToFile(rootPathWS + "\\" + NameSpace + "." + DataAccessLayerNameSpace + ".WebService.csproj", true);
-				this.RenderToFile(projectTemplate, rootPathWS + "\\" + NameSpace + "." + DataAccessLayerNameSpace + ".WebService.csproj", true);
-			}	
-			
-			// webservice Client
 			AddFileNode(commonNode, rootPathDALWS + "\\" + NameSpace + "." + DataAccessLayerNameSpace + ".WebServiceClient.csproj");
 
 			this.GetTemplate(projectTemplate).SetProperty("IncludeBll", false);
@@ -2683,12 +2656,15 @@ public void Go()
 			this.GetTemplate(projectTemplate).SetProperty("IncludeWCFDataAttributes", false);
 			this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", false);
 		
-			//this.GetTemplate(projectTemplate).RenderToFile(rootPathDALWS + "\\" + DALWSNameSpace + ".csproj", true);
 			this.RenderToFile(projectTemplate, rootPathDALWS + "\\" + DALWSNameSpace + ".csproj", true);
 		}
+			
+			#endregion Web Service Client
+			
 	}
+		#endregion DAL project
 	
-	// Win Library project file
+		#region Win Library project
 	if (GenerateWinLibrary)
 	{
 		AddFileNode(commonNode, WinLibNameSpace + ".csproj");
@@ -2709,8 +2685,9 @@ public void Go()
 		
 		this.RenderToFile(projectTemplate, rootPathWinLib + "\\" + WinLibNameSpace + ".csproj", true);
 	}
+		#endregion Win Library project
 	
-	// Web Library project file
+		#region Web Library project
 	if (GenerateWebLibrary)
 	{
 		AddFileNode(commonNode, WebLibNameSpace + ".csproj");
@@ -2731,8 +2708,9 @@ public void Go()
 		
 		this.RenderToFile(projectTemplate, rootPathWebLib + "\\" + WebLibNameSpace + ".csproj", true);
 	}
+		#endregion Web Library project file
 	
-	// Web Application Project file
+		#region Web Application project
 	if ( GenerateWebsite && UseWebAppProject )
 	{
 		AddFileNode(commonNode, WebsiteNameSpace + ".csproj");
@@ -2753,8 +2731,9 @@ public void Go()
 		
 		this.RenderToFile(projectTemplate, rootPathWebsite + "\\" + WebsiteNameSpace + ".csproj", true);
 	}
+		#endregion Web Application Project file
 	
-	// Unit tests only project file
+		#region Unit tests project
 	if (IncludeUnitTest != MoM.Templates.UnitTestStyle.None) // && !File.Exists(rootPathDAL + "\\" + NameSpace + ".DataAccessLayer.csproj"))
 	{
 		AddFileNode(commonNode, NameSpace + "." + UnitTestsNameSpace + ".csproj");
@@ -2774,8 +2753,6 @@ public void Go()
 		this.GetTemplate(projectTemplate).SetProperty("IncludeDesignTimeSupport", false);
 		this.GetTemplate(projectTemplate).SetProperty("NetTiersSqlProvider", _netTiersSqlProvider);
 		
-
-		//this.GetTemplate(projectTemplate).RenderToFile(rootPathUT + "\\" + UTNameSpace + ".csproj", true);
 		this.RenderToFile(projectTemplate, rootPathUT + "\\" + UTNameSpace + ".csproj", true);
 	}
 	
@@ -2793,12 +2770,11 @@ public void Go()
 			this.RenderToFile(testrunconfigTemplate, OutputDirectory + "\\" + "localtestrun.testrunconfig", true);
 		}
 	}
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#endregion Unit tests only project
 	
+		#endregion Generate VS.Net projects	
 	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	//-- Generating nAnt file
-	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#region Generating nAnt build file
 	if (vsnetIntegration != VSNetIntegration.None && !File.Exists(OutputDirectory + "\\" + NameSpace + ".build"))
 	{
 		AddFileNode(commonNode, NameSpace + ".build");
@@ -2824,7 +2800,9 @@ public void Go()
 		
 		this.RenderToFile("nAnt.cst", OutputDirectory + "\\" + NameSpace + ".build", false);
 	}
+		#endregion Generating nAnt build file
 	
+		#region Entity helper and util
 	//----------------------------------------------------------------------------------------------------------------------------------------------
 	//-- EntityHelper.cs
 	//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -2842,7 +2820,9 @@ public void Go()
 	this.GetTemplate("EntityUtil.cst").RenderToFile(rootPathBLL + "\\EntityUtil.cs", true);
 	//AddExecutionTime(entityUtilNode);
 	//----------------------------------------------------------------------------------------------------------------------------------------------
+		#endregion Entity helper and util	
 	
+		#region Generate Assembly file
 	string version = string.Empty;
 	if (!File.Exists(OutputDirectory + "\\AssemblyInfo.cs"))
 	{
@@ -2859,20 +2839,19 @@ public void Go()
 	this.GetTemplate("AssemblyInfo.cst").SetProperty("UnitTestNameSpace", UnitTestsNameSpace);
 	this.GetTemplate("AssemblyInfo.cst").SetProperty("Version", version);
 	this.RenderToFile("AssemblyInfo.cst", OutputDirectory + "\\AssemblyInfo.cs", true );
+		#endregion Generate Assembly file
 	
+		#region Generate Web Service
 	if (GenerateWebservice)
 	{
 		//this.GetTemplate("AssemblyInfo.cst").RenderToFile(rootPathWS + "\\AssemblyInfo.cs", true);
 		this.RenderToFile("AssemblyInfo.cst", rootPathWS + "\\AssemblyInfo.cs", true);
 	}
+		#endregion Generate Web Service
 		
 	AddExecutionTime(commonNode);
 	
-	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	// -- Process the By View templates
-	// -----------------------------------
-	
+		#region Process the By View templates
 	for(int x=0; x < templateSourceViews.Count; x++)
 	{
 		ViewSchema SourceView = templateSourceViews[x];
@@ -2986,8 +2965,8 @@ public void Go()
 		//----------------------------------------------------------------------------------------------------------------------------------------------
 		//	BLL class
 		//----------------------------------------------------------------------------------------------------------------------------------------------
-		///Components
-		//XmlElement coNode = AddFileNode(tableNode, GetPartialClassName(GetClassName(SourceTable.Name)) + ".cs");
+	
+			#region Components
 		if (ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel)
 		{
 			if (!File.Exists(rootPathComponents + "\\Views\\" + GetClassName(SourceView) + ".cs")) 
@@ -3081,9 +3060,9 @@ public void Go()
 	
 			AddExecutionTime(coBaseNode1);
 		}		
-		//----------------------------------------------------------------------------------------------------------------------------------------------
-		//	entity and provider nUnit Test class
-		//----------------------------------------------------------------------------------------------------------------------------------------------
+			#endregion Components
+	
+			#region	Entity and provider nUnit Test class
 		if (IncludeUnitTest != MoM.Templates.UnitTestStyle.None)
 		{
 			XmlElement testNode;
@@ -3159,7 +3138,9 @@ public void Go()
 			AddExecutionTime(testNode);
 		}
 		
+			#endregion Entity and provider nUnit Test class
 		
+			#region Generate Web Service
 		if (GenerateWebservice)
 		{
 			//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3203,30 +3184,30 @@ public void Go()
 			}
 		}		
 		
+			#endregion Generate Web Service
 		
 		AddExecutionTime(tableNode);
 		_CurrentObjectIndex++;
 	}
 	
+		#endregion Process the By View templates
 	
-	//----------------------------------------------------------------------------------------------------------------------------------------------
-	// -- Now process the By DataTable templates
-	// -----------------------------------
+		#region Process the By DataTable templates
 	for (int x=0; x < templateSourceTables.Count; x++)
 	{
 		TableSchema SourceTable = templateSourceTables[x];
 		_CurrentPhase = string.Format("Generating {0} files", SourceTable.Name);
 		XmlElement tableNode = AddTableNode(SourceTable);
 		
-		//----------------------------------------------------------------------------------------------------------------------------------------------
-		//-- Discovering Customer Procedures
-		//----------------------------------------------------------------------------------------------------------------------------------------------
+			#region Discovering Customer Procedures
 		if (IncludeCustoms)
 		{
 			IDictionary customProcs = GetCustomProcedures(SourceTable);
 			LogCustomProcedures(customProcs, SourceTable.Name, "table", customProcsNode);
 		}	
+			#endregion Discovering Customer Procedures
 	
+			#region Generate Entity layer
 		if (GenerateBusinessLogicLayer)
 		{
 			/*
@@ -3305,8 +3286,7 @@ public void Go()
 				AddExecutionTime(boNode);
 			}
 			
-			///Components
-			//XmlElement coNode = AddFileNode(tableNode, GetPartialClassName(GetClassName(SourceTable.Name)) + ".cs");
+				#region Components
 			if (ComponentPattern == MoM.Templates.ComponentPatternType.DomainModel)
 			{
 				
@@ -3405,8 +3385,12 @@ public void Go()
 	
 				AddExecutionTime(coBaseNode2);
 			}
+				
+				#endregion Components
 		}
+			#endregion Generate Entity layer
 		
+			#region Generate DAL
 		if (GenerateDataAccessLayer)
 		{
 			//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3579,10 +3563,7 @@ public void Go()
 			}
 			#endregion
 
-			
-			//----------------------------------------------------------------------------------------------------------------------------------------------
-			//	Generating the Repository nUnit Test class
-			//----------------------------------------------------------------------------------------------------------------------------------------------
+				#region Generate the Repository nUnit Test class
 			if ((IncludeUnitTest != MoM.Templates.UnitTestStyle.None) /*&& !IsJunctionTable(SourceTable)*/)
 			{
 				XmlElement testNode;
@@ -3614,6 +3595,7 @@ public void Go()
 					this.RenderToFile("EntityRepositoryTest.cst", rootPathUT + "\\" + GetClassName(SourceTable, ClassNameFormat.UnitTest) + ".cs", true);
 					AddExecutionTime(testNode);
 				}
+					
 				// generate ordered test lists for EntityrepositoryTests in Visual Studio 
 				if (IncludeUnitTest == MoM.Templates.UnitTestStyle.VSTS)
 				{
@@ -3645,6 +3627,7 @@ public void Go()
 						AddExecutionTime(testNode);
 					}
 				}
+					
 				//------------------------------------------------------------------------------------------------------------------------------------------
 				//	generate always
 				//------------------------------------------------------------------------------------------------------------------------------------------
@@ -3671,21 +3654,20 @@ public void Go()
 				this.RenderToFile("EntityRepositoryTest.generated.cst", rootPathUT + "\\" + GetClassName(SourceTable, ClassNameFormat.UnitTest) + ".generated.cs", true);
 				AddExecutionTime(testNode);
 			}
+				#endregion Generate the Repository nUnit Test class
 						
-			
+				#region Generate Web Service
 			if (GenerateWebservice)
 			{
 				//----------------------------------------------------------------------------------------------------------------------------------------------
 				//	Generating the abstract WebService client Repository class		
 				//----------------------------------------------------------------------------------------------------------------------------------------------
-				
 				XmlElement wsDalcBaseNode = AddFileNode(tableNode, "WebServiceClient\\Ws" + GetClassName(SourceTable, ClassNameFormat.ProviderBase) + ".cs");
 				
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("IncludeCustoms", IncludeCustoms);
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("CustomNonMatchingReturnType", CustomNonMatchingReturnType);				
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("ProcedurePrefix", ProcedurePrefix.Replace(" ", ""));			
 
-				
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("IncludeInsert", IncludeInsert);
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("IncludeUpdate", IncludeUpdate);
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("IncludeSave", IncludeSave);
@@ -3700,7 +3682,6 @@ public void Go()
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("SourceTable", SourceTable);
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("SourceTables", templateSourceTables);
 			
-				
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("NameSpace", BLLNameSpace);
 				this.GetTemplate("WsEntityProviderBase.generated.cst").SetProperty("DALNameSpace", DALNameSpace);
 				
@@ -3710,9 +3691,6 @@ public void Go()
 				this.RenderToFile("WsEntityProviderBase.generated.cst", rootPathDALWS + "\\Ws" + GetClassName(SourceTable, ClassNameFormat.ProviderBase) + ".generated.cs", true);
 				AddExecutionTime(wsDalcBaseNode);
 				
-				//----------------------------------------------------------------------------------------------------------------------------------------------
-			
-			
 				//----------------------------------------------------------------------------------------------------------------------------------------------
 				//	Generating the WebService Repository Implementation, only if not already there
 				//----------------------------------------------------------------------------------------------------------------------------------------------
@@ -3730,12 +3708,20 @@ public void Go()
 					AddExecutionTime(wsDalcNode);
 				}			
 			}
+				
+				#endregion Generate Web Service
+				
 		}
+			#endregion Generate DAL
 	
 		AddExecutionTime(tableNode);
 		_CurrentObjectIndex++;
 	}
+		#endregion Process the By DataTable templates
+		
+		#endregion Code generation
 	
+		#region Finalise - build report and start VS if required
 	try 
 	{
 		XmlElement summaryElement = docOutput.CreateElement("summary");
@@ -3752,8 +3738,6 @@ public void Go()
 		AddExecutionTime(docOutput.DocumentElement);
 		docOutput.Save(OutputDirectory + "\\report.xml");
 	
-
-		
 		//XPathDocument doc = new XPathDocument(OutputDirectory + "\\report.xml");
 		XslCompiledTransform xslt = new XslCompiledTransform();
 		xslt.Load(this.CodeTemplateInfo.DirectoryName + "\\VisualStudio\\reportHTML.xsl");
@@ -3811,11 +3795,15 @@ public void Go()
 	
 	Trace.WriteLine(exTime);
 	Response.WriteLine(exTime);
+		#endregion Finalise - build report and start VS if required
+	
 }
 
+	#region Private helper methods
 
+	#region Codesmith related members
 ///<summary>
-///
+	/// Codesmith version
 ///</summary>
 private enum CodesmithVersion : int
 {
@@ -3828,7 +3816,7 @@ private enum CodesmithVersion : int
 }
 
 ///<summary>
-///
+	/// Does Support Codesmith build task
 ///</summary>
 private bool DoesSupportCodesmithBuildTask()
 {
@@ -3848,6 +3836,33 @@ private bool DoesSupportCodesmithBuildTask()
 	return (isPro && (int)GetCodesmithVersion() >= (int)CodesmithVersion.Codesmith32);
 }		
 
+	///<summary>
+	/// Get Codesmith version
+	///</summary>
+	private CodesmithVersion GetCodesmithVersion()
+	{
+		try
+		{
+			string version = typeof(CodeTemplate).Assembly.GetName().Version.ToString();
+			if(version != null)
+			{
+				if (version.IndexOf("3.2") >= 0)
+					return CodesmithVersion.Codesmith32;
+				else if (version.IndexOf("3.1") >=0)
+					return CodesmithVersion.Codesmith31;
+				else if (version.IndexOf("3.0") >=0)
+					return CodesmithVersion.Codesmith30;
+				else if (version.IndexOf("2.6") >= 0)
+					return CodesmithVersion.Codesmith26;
+			}
+		}
+		catch
+		{
+			//could not discover version info.	
+		}
+		
+		return CodesmithVersion.Unknown;
+	}
 
 #region CodeSmith Progression
 ///<summary>
@@ -3870,14 +3885,18 @@ private void PerformStep()
 }
 #endregion 
 
+	#endregion Codesmith related members
 
+	///<summary>
+	/// Get Solution File Link
+	///</summary>
 private string GetSolutionFileLink()
 {
 	return  @"file:\\\" + OutputDirectory +  "\\" + NameSpace + ".sln";	
 }
 
 ///<summary>
-///
+	/// Get Property Set File Path
 ///</summary>
 private string GetPropertySetFilePath()
 {
@@ -3896,40 +3915,11 @@ private string GetPropertySetFilePath()
 }
 
 ///<summary>
-///
+	/// Get NetTiers Template Path
 ///</summary>
 private string GetNetTiersTemplatePath()
 {
 	return this.CodeTemplateInfo.FullPath;
-}
-
-
-///<summary>
-///
-///</summary>
-private CodesmithVersion GetCodesmithVersion()
-{
-	try
-	{
-		string version = typeof(CodeTemplate).Assembly.GetName().Version.ToString();
-		if(version != null)
-		{
-			if (version.IndexOf("3.2") >= 0)
-				return CodesmithVersion.Codesmith32;
-			else if (version.IndexOf("3.1") >=0)
-				return CodesmithVersion.Codesmith31;
-			else if (version.IndexOf("3.0") >=0)
-				return CodesmithVersion.Codesmith30;
-			else if (version.IndexOf("2.6") >= 0)
-				return CodesmithVersion.Codesmith26;
-		}
-	}
-	catch
-	{
-		//could not discover version info.	
-	}
-	
-	return CodesmithVersion.Unknown;
 }
 
 ///<summary>
@@ -3995,6 +3985,7 @@ private bool AttemptCreateLocalVirtualDirectoryByPath()
 		Debug.WriteLine("Could not automatically create virtual directory for web service\n" + exc.Message);
 		return false;
 	}
+		
   return true;
 }
 
@@ -4056,6 +4047,7 @@ private void SetCommonProperties(String template)
 	this.GetTemplate(template).SetProperty("IncludeRelations", IncludeRelations);	
 }
 
+	#region Mapping and Xml helper methods
 private NetTiers.NetTiersMap GetMapping()
 {
 	return base.GetMapping(this.MappingFile);
@@ -4143,6 +4135,7 @@ private XmlElement AddTableNode(string tableName)
 	
 	return node;
 }
+	#endregion Mapping and Xml helper methods
 
 ///<summary>
 /// Contrib (paul welter)
@@ -4204,7 +4197,9 @@ public static string RelativePathTo(string fromDirectory, string toPath)
 	return newPath;
 }
 	
-	
+	/// <Summary>
+	/// Increment Build Version
+	/// </summary>
 private string IncrementBuildVersion(string assemblyInfoFilename)
 {
 	using (StreamReader reader = File.OpenText(assemblyInfoFilename))
@@ -4256,6 +4251,9 @@ private void LogCustomProcedures(IDictionary customProcs, string entityName, str
 		customProcsNode.AppendChild(customProcNode);
 	}
 }
+	
+	#endregion Private helper methods
+
 </script>
 <%
 	Verbose = false; // change this to true if you want verbose output in this template

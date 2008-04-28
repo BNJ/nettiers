@@ -43,6 +43,10 @@ namespace MoM.Templates
 		private string unitTestFormat		= "{0}Test";
 		private string enumFormat 			= "{0}List";
 		private string manyToManyFormat		= "{0}From{1}";
+		private string columnClassNameFormat = "{0}Column";
+		private string comparerClassNameFormat = "{0}Comparer";
+		private string eventHandlerClassNameFormat = "{0}EventHandler";
+		private string eventArgsClassNameFormat = "{0}EventArgs";
 		private string strippedTablePrefixes		= "tbl;tbl_";
 		private string strippedTableSuffixes		= "_t";
 		private string serviceClassNameFormat = "{0}Service";
@@ -409,6 +413,66 @@ namespace MoM.Templates
 			}
 		}
 				
+		[Category("09. Code style - Advanced")]
+		[Description("The format used by the Column ClassNameFormat. Parameter {0} is replaced by the original class name.")]
+		public string ColumnClassNameFormat
+		{
+			get {return this.columnClassNameFormat;}
+			set
+			{
+				if (value.IndexOf("{0}") == -1) 
+				{
+					throw new ArgumentException("This parameter must contains the pattern {0} to be valid.", "ColumnClassNameFormat");
+				}
+				this.columnClassNameFormat = value;
+			}
+		}
+		
+		[Category("09. Code style - Advanced")]
+		[Description("The format used by the Comparer ClassNameFormat. Parameter {0} is replaced by the original class name.")]
+		public string ComparerClassNameFormat
+		{
+			get {return this.comparerClassNameFormat;}
+			set
+			{
+				if (value.IndexOf("{0}") == -1) 
+				{
+					throw new ArgumentException("This parameter must contains the pattern {0} to be valid.", "ComparerClassNameFormat");
+				}
+				this.comparerClassNameFormat = value;
+			}
+		}
+		
+		[Category("09. Code style - Advanced")]
+		[Description("The format used by the EventHandler ClassNameFormat. Parameter {0} is replaced by the original class name.")]
+		public string EventHandlerClassNameFormat
+		{
+			get {return this.eventHandlerClassNameFormat;}
+			set
+			{
+				if (value.IndexOf("{0}") == -1) 
+				{
+					throw new ArgumentException("This parameter must contains the pattern {0} to be valid.", "EventHandlerClassNameFormat");
+				}
+				this.eventHandlerClassNameFormat = value;
+			}
+		}
+		
+		[Category("09. Code style - Advanced")]
+		[Description("The format used by the EventHandler ClassNameFormat. Parameter {0} is replaced by the original class name.")]
+		public string EventArgsClassNameFormat
+		{
+			get {return this.eventArgsClassNameFormat;}
+			set
+			{
+				if (value.IndexOf("{0}") == -1) 
+				{
+					throw new ArgumentException("This parameter must contains the pattern {0} to be valid.", "EventArgsClassNameFormat");
+				}
+				this.eventArgsClassNameFormat = value;
+			}
+		}
+		
 		[Category("07. CRUD - Advanced")]
 		[Description("If set to true, attempts to parse the Default Value of your column and set it for the default value of the property on initialization.")]
 		public bool ParseDbColDefaultVal
@@ -568,7 +632,7 @@ namespace MoM.Templates
         public string GetPascalCaseNameStyle1(string name)
         {
 			string[] splitNames;
-			name = name.Trim();
+			name = Regex.Replace( name, "^[^a-zA-Z]+", string.Empty ).Trim();
 			if (ChangeUnderscoreToPascalCase)
 			{
 				char[] splitter = {'_', ' '};
@@ -5350,6 +5414,50 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 			return entlibVersionText;
 		}
 		#endregion 
+		
+		public string GetMSBuildExtensionsVersionString( VSNetVersion version )
+		{
+			string versionNumber = "8.0";
+			
+			switch ( version )
+			{
+				case ( VSNetVersion.v2008 ) :
+					versionNumber = "9.0";
+					break;
+			}
+		
+			return versionNumber;
+		}
+		
+		public string GetVisualStudioProductVersionString( VSNetVersion version )
+		{
+			string versionNumber = "8.0.50727";
+			
+			switch ( version )
+			{
+				case ( VSNetVersion.v2008 ) :
+					versionNumber = "9.0.21022";
+					break;
+			}
+		
+			return versionNumber;
+		}
+		
+		public string GetDotNetFrameworkString( DotNetFrameworkVersion version )
+		{
+			string versionNumber = "2.0";
+			switch ( version )
+			{
+				case ( DotNetFrameworkVersion.v3 ) :
+					versionNumber = "3.0";
+					break;
+				case ( DotNetFrameworkVersion.v3_5 ) :
+					versionNumber = "3.5";
+				break;
+			}
+		
+			return versionNumber;
+		}
 	}
 
 	#region Retry
@@ -5440,6 +5548,43 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 		/// <summary>A Domain Model Pattern Generation should be included.</summary>
 		DomainModel
 	}
+	#endregion
+	
+	#region Entity Equality Semantics
+	public enum EqualitySemantics
+	{
+		/// <summary>Uses default implementation of Equals() and GetHashCode() (Reference - type Semantics, based on object identity)</summary>
+		Reference,
+		/// <summary>Override Entity Equals() and GetHashCode() to use value - type semantics (Equality based on object contents)</summary>
+		Value
+	}
+	#endregion
+	
+	#region Validation Option Entlib or NetTiers
+	public enum ValidationType
+	{
+		NetTiers,
+		EntLib
+	}
+	#endregion
+	
+	#region VS and Dot Net Version
+		
+	public enum VSNetVersion
+	{
+		v2005
+		,v2008
+	}
+	
+	public enum DotNetFrameworkVersion
+	{
+		/// <summary> version 2.0 </summary>
+		v2,
+		/// <summary> version 3.0 </summary>
+		v3,
+		/// <summary> version 3.5 </summary>
+		v3_5
+	}	
 	#endregion
 	
 	#region DatabaseType
@@ -5713,7 +5858,7 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 	
 	#endregion MethodNamesProperty
 	
-	#region Archived Depricated
+	#region Archived Deprecated
 	/*
 	///<summary>
 	/// returns true all primary key columns have is a foreign key relationship
