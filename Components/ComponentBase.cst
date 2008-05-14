@@ -381,7 +381,8 @@ if (IsLoggable) {
 				{
 					<% for (int x=0; x < cols.Count; x++) 
 					{ 
-						if (GetPropertyName(cols[x]) != "LastUpdatedDate" && GetPropertyName(cols[x]) != "CreatedDate")
+						string propName = GetPropertyName(cols[x]).ToLower();
+						if (propName != "lastupdateddate" && propName != "createddate" && propName != "password" && propName != "passwordsalt")
 						{
 					%>	
 					details.Add(DomainUtil.CreateAuditDetail(base.GetOriginalValue(<%= this.GetClassName(SourceTable, ClassNameFormat.Column) %>.<%=GetPropertyName(cols[x])%>), this.<%= GetPropertyName(cols[x])%>, "<%= GetPropertyName(cols[x])%>"));
