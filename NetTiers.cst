@@ -4207,9 +4207,9 @@ public static string RelativePathTo(string fromDirectory, string toPath)
 	return newPath;
 }
 	
-	/// <Summary>
-	/// Increment Build Version
-	/// </summary>
+/// <summary>
+/// Increment Build Version
+/// </summary>
 private string IncrementBuildVersion(string assemblyInfoFilename)
 {
 	using (StreamReader reader = File.OpenText(assemblyInfoFilename))
