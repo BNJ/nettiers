@@ -37,6 +37,7 @@ using System.ComponentModel;
 using System.Collections;
 using System.Runtime.Serialization;
 using System.Xml.Serialization;
+using System.Web.Script.Serialization;
 #endregion
 
 namespace <%=NameSpace%>
@@ -185,7 +186,7 @@ namespace <%=NameSpace%>
 		/// <summary>
 		/// Gets a value indicating if object has been <see cref="MarkToDelete"/>. ReadOnly.
 		/// </summary>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual bool IsDeleted
 		{
 			get { return this._isDeleted; }
@@ -197,7 +198,7 @@ namespace <%=NameSpace%>
 		///	Gets a value indicating  if the object has been modified from its original state.
 		/// </summary>
 		///<value>True if object has been modified from its original state; otherwise False;</value>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual bool IsDirty
 		{
 			get { return this._isDirty; }
@@ -209,7 +210,7 @@ namespace <%=NameSpace%>
 		///	Gets a value indicating if the object is new.
 		/// </summary>
 		///<value>True if objectis new; otherwise False;</value>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual bool IsNew
 		{
 			get { return this._isNew; }
@@ -219,7 +220,7 @@ namespace <%=NameSpace%>
 		/// <summary>
 		///		The name of the underlying database table.
 		/// </summary>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public string ViewName
 		{
 			get { return "<%=SourceView.Name%>"; }

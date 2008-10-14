@@ -1158,6 +1158,18 @@ namespace <%=DALNameSpace%>.SqlClient
 					<%}
 					else				
 				{%>
+				<%
+					// BEGIN CUSTOM CODE: Forces any column named "LastUpdatedDate" that is not nullable and is a DateTime data type to be set
+					// to DateTime.Now any time an Update operation occurs on an entity.
+				if(cols[i].Name.ToLower() == "lastupdateddate" && cols[i].DataType == System.Data.DbType.DateTime && !cols[i].AllowDBNull) 
+				{
+				%>
+			database.AddInParameter(commandWrapper, "@<%=GetPropertyName(cols[i])%>", <%=GetDbType(cols[i]) %>, System.DateTime.Now );
+				<% } 
+				else 
+				{ 
+				
+				// END CUSTOM CODE	%>
 			database.AddInParameter(commandWrapper, "@<%=GetPropertyName(cols[i])%>", <%=GetDbType(cols[i]) %>, entity.<%=GetPropertyName(cols[i])%> );
 				<%}
 				}
@@ -1165,6 +1177,7 @@ namespace <%=DALNameSpace%>.SqlClient
 				{%>
 			database.AddInParameter(commandWrapper, "@Original<%=GetPropertyName(cols[i])%>", DbType.<%= cols[i].DataType.ToString() %>, entity.Original<%=GetPropertyName(cols[i])%>);
 				<%}
+			}
 			}
 			
 			if (RowVersion != null)

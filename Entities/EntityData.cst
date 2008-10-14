@@ -95,6 +95,7 @@
 		/// </summary>
 		/// <value>The source <%=pkClassName%> for <%=fkPropertyName%>.</value>
         [XmlIgnore()]
+		[ScriptIgnore()]
 		[Browsable(false)]
 		public virtual <%=pkClassName%> <%=fkPropertyName%>Source
       	{
@@ -197,7 +198,7 @@ if(IncludeRelations)
 		///		Indicates state of object
 		/// </summary>
 		/// <remarks>0=Unchanged, 1=Added, 2=Changed</remarks>
-		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute()" : "") %>]
+		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute(), ScriptIgnoreAttribute()" : "") %>]
 		public EntityState	EntityState
 		{
 			get { return currentEntityState;  }

@@ -126,6 +126,9 @@ if(GenerateEntityTrackingCode) {
 		/// </summary>
 		public static bool HandleException(Exception e, string policyName)
 		{
+			<%// BEGIN CUSTOM CODE: JIMB - Disabled enterprise library exception handling, it's not used. %>
+			return true;
+			/*
 			try
             {
 				return ExceptionPolicy.HandleException(e, policyName);
@@ -134,6 +137,8 @@ if(GenerateEntityTrackingCode) {
             {
 				return true;
             }
+            */
+            <%// END CUSTOM CODE %>
 		}
 
         #region Helper Methods

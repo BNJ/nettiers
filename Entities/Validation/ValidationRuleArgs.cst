@@ -15,6 +15,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Xml.Serialization;
+using System.Web.Script.Serialization;
 
 namespace <%=NameSpace%>.Validation
 {
@@ -33,6 +34,7 @@ namespace <%=NameSpace%>.Validation
 		/// </summary>
 		/// <value>The tag.</value>
 		[XmlIgnore]
+		[ScriptIgnore]
 		public object Tag
 		{
 			get { return _tag; }

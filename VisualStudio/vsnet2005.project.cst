@@ -240,6 +240,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System"/>
+    <%// BEGIN CUSTOM CODE: Added System.Core to all generated projects %><Reference Include="System.Core"/><%// END CUSTOM CODE %>
     <Reference Include="System.Web"/>
     <Reference Include="System.Data"/>
     <Reference Include="System.Design"/>
@@ -253,6 +254,12 @@
     <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
     <Reference Include="EnvDTE80, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
 	<% } %>
+	<% // BNJ custom: this reference needed for the IgnoreScript attribute
+	if ( IncludeBll ) { %>
+	<Reference Include="System.Web.Extensions">
+		<RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
+	<% } // End BNJ custom %>
 	<%
 	if (IncludeWinLibrary) {
 	%>

@@ -35,6 +35,7 @@ using System.ComponentModel;
 using System.Collections;
 using System.Xml.Serialization;
 using System.Runtime.Serialization;
+using System.Web.Script.Serialization;
 #endregion
 
 namespace <%=NameSpace%>
@@ -218,7 +219,7 @@ namespace <%=NameSpace%>
 		/// <summary>
 		/// 	True if object has been <see cref="MarkToDelete"/>. ReadOnly.
 		/// </summary>
-		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute()" : "") %>]
+		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute(), ScriptIgnoreAttribute()" : "") %>]
 		public virtual bool IsDeleted
 		{
 			get { return this.EntityState == EntityState.Deleted; }
@@ -229,7 +230,7 @@ namespace <%=NameSpace%>
 		///		Indicates if the object has been modified from its original state.
 		/// </summary>
 		/// <remarks>True if object has been modified from its original state; otherwise False;</remarks>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual bool IsDirty
 		{
 			get { return this.EntityState != EntityState.Unchanged; }
@@ -241,7 +242,7 @@ namespace <%=NameSpace%>
 		///		Indicates if the object is new.
 		/// </summary>
 		/// <remarks>True if objectis new; otherwise False;</remarks>
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual bool IsNew
 		{
 			get { return this.EntityState == EntityState.Added; }
@@ -253,7 +254,7 @@ namespace <%=NameSpace%>
 		///		Indicates state of object
 		/// </summary>
 		/// <remarks>0=Unchanged, 1=Added, 2=Changed</remarks>
-		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute()" : "") %>]
+		[BrowsableAttribute(false)<%= (!SerializeEntityState ? ", XmlIgnoreAttribute(), ScriptIgnoreAttribute()" : "") %>]
 		public abstract EntityState EntityState { get; set; }
 		
 		/// <summary>
@@ -302,6 +303,7 @@ namespace <%=NameSpace%>
         /// </summary>
         /// <value>The parent collection.</value>
 		[XmlIgnore]
+		[ScriptIgnore]
 		public abstract object ParentCollection{get;set;}
 		
 		#region Common Columns
@@ -351,7 +353,7 @@ namespace <%=NameSpace%>
 		/// Determines whether this entity is being tracked.
 		/// </summary>
 		[System.ComponentModel.Bindable(false)]
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public bool IsEntityTracked 
 		{	
 			get
@@ -369,7 +371,7 @@ namespace <%=NameSpace%>
 		/// Determines whether this entity is to suppress events while set to true.
 		/// </summary>
 		[System.ComponentModel.Bindable(false)]
-		[BrowsableAttribute(false), XmlIgnoreAttribute()]
+		[BrowsableAttribute(false), XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public bool SuppressEntityEvents
 		{	
 			get
@@ -385,7 +387,7 @@ namespace <%=NameSpace%>
 		///<summary>
 		/// Provides the tracking key for the <see cref="EntityLocator"/>
 		///</summary>
-		[XmlIgnoreAttribute(), BrowsableAttribute(false)]
+		[XmlIgnoreAttribute(), ScriptIgnoreAttribute(), BrowsableAttribute(false)]
 		public abstract string EntityTrackingKey {	get; set; }
 		
 		///<summary>
@@ -487,7 +489,7 @@ namespace <%=NameSpace%>
 		/// <summary>
 		/// Returns the list of <see cref="Validation.ValidationRules"/> associated with this object.
 		/// </summary>
-		[XmlIgnoreAttribute()]
+		[XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		protected Validation.ValidationRules ValidationRules
 		{
 			get
@@ -532,7 +534,7 @@ namespace <%=NameSpace%>
 		/// Returns a list of all the validation rules that failed.
 		/// </summary>
 		/// <returns><see cref="Validation.BrokenRulesList" /></returns>
-		[XmlIgnoreAttribute()]
+		[XmlIgnoreAttribute(), ScriptIgnoreAttribute()]
 		public virtual Validation.BrokenRulesList BrokenRulesList
 		{
 			get
