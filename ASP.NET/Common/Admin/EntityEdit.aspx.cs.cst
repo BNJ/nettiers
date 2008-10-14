@@ -64,13 +64,6 @@
 	string className = NameSpace + "." + GetClassName(SourceTable);
 	string providerName = GetClassName(SourceTable, ClassNameFormat.Provider);
 
-	TableSchemaCollection sourceTables = new TableSchemaCollection();
-	
-	for (int i=0; i < SourceDatabase.Tables.Count; i++)
-	{
-		sourceTables.Add(SourceDatabase.Tables[i]);
-	}
-	
 	int iRelatedCounter = 0;
 %>
 #region Imports...
