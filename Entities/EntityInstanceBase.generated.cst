@@ -692,7 +692,7 @@ WriteRelationshipPropertyString();
 			}
 		}
 		
-		<%// CUSTOM: Start customized non-netTiers method implementation%>
+		<%// BEGIN CUSTOM: Start customized non-netTiers method implementation%>
 		/// <summary>
 		/// Returns the original state of the value (for auditing purposes)
 		/// </summary>
@@ -702,6 +702,9 @@ WriteRelationshipPropertyString();
 		/// </returns>
 		public object GetOriginalValue(<%= GetClassName(SourceTable, ClassNameFormat.Column) %> column)
 		{
+			if(_originalData == null)
+				return null;
+				
 			switch(column)
 			{
 				<% for (int x=0; x < cols.Count; x++) { %>
@@ -713,7 +716,7 @@ WriteRelationshipPropertyString();
 					return null;
 			}
 		}
-		<%// CUSTOM: End customized non-netTiers method implementation%>
+		<%// END CUSTOM: End customized non-netTiers method implementation%>
 		
 		/// <summary>
 		/// Determines whether the data has changed from original.
