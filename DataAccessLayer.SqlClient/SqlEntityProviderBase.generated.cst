@@ -1074,8 +1074,9 @@ namespace <%=DALNameSpace%>.SqlClient
 						castTo = typeof(System.String).ToString();
 					else
 						castTo = cols[i].SystemType.ToString();	%>
-
-			entity.<%=GetPropertyName(cols[i])%> = (<%=castTo%>) database.GetParameterValue(commandWrapper, "@<%=GetPropertyName(cols[i])%>");						
+<% /* BEGIN CUSTOMIZATION */ %>
+			entity.<%=GetPropertyName(cols[i])%> = database.GetParameterValue(commandWrapper, "@<%=GetPropertyName(cols[i])%>") as <%=castTo%>;						
+<% /* END CUSTOMIZATION */ %>
 				<%}
 			}
 			%>
