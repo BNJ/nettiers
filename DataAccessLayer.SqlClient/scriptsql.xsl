@@ -14,7 +14,7 @@ Use [<xsl:value-of select="/root/database"/>]
 Go
 SET QUOTED_IDENTIFIER ON 
 GO
-SET ANSI_NULLS OFF 
+SET ANSI_NULLS ON 
 GO
 <xsl:apply-templates select="//procedures/procedure[not(@skip)]"/>
 </xsl:template>
@@ -42,7 +42,7 @@ GRANT EXEC ON <xsl:value-of select="@owner"/>.<xsl:value-of select="@name"/> TO 
 GO
 SET QUOTED_IDENTIFIER ON 
 GO
-SET ANSI_NULLS OFF 
+SET ANSI_NULLS ON 
 GO
 </xsl:template>
 
