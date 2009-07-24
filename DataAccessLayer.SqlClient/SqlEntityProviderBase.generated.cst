@@ -1075,7 +1075,7 @@ namespace <%=DALNameSpace%>.SqlClient
 					else
 						castTo = cols[i].SystemType.ToString();	%>
 <% /* BEGIN CUSTOMIZATION */ 
-				if(cols[i].AllowDBNull) {
+				if(cols[i].SystemType.IsByRef) {
 					%>
 			entity.<%=GetPropertyName(cols[i])%> = database.GetParameterValue(commandWrapper, "@<%=GetPropertyName(cols[i])%>") as <%=castTo%>;						
 				<% } else { %>
