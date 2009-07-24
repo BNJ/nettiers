@@ -1232,7 +1232,14 @@ namespace <%=DALNameSpace%>.SqlClient
 					else
 						castTo = cols[i].SystemType.ToString();				
 				%>
+			<% /* BEGIN CUSTOMIZATION */ 
+				if(!cols[i].SystemType.IsValueType) {
+					%>
+			entity.<%=GetPropertyName(cols[i])%> = database.GetParameterValue(commandWrapper, "@<%=GetPropertyName(cols[i])%>") as <%=castTo%>;						
+				<% } else { %>
 			entity.<%=GetPropertyName(cols[i])%> = (<%=castTo%>)database.GetParameterValue(commandWrapper, "@<%=GetPropertyName(cols[i])%>");
+				
+<% } /* END CUSTOMIZATION */ %>
 			<%}
 		
 			// if in the PK, update the original
