@@ -14,13 +14,22 @@ Use [<xsl:value-of select="/root/database"/>]
 Go
 SET QUOTED_IDENTIFIER ON 
 GO
-SET ANSI_NULLS ON 
-GO
 <xsl:apply-templates select="//procedures/procedure[not(@skip)]"/>
 </xsl:template>
 
 <xsl:template match="procedure">
-	
+
+<xsl:choose>
+	<xsl:when test="@type = 'select'">
+SET ANSI_NULLS OFF
+GO
+	</xsl:when>
+	<xsl:otherwise>
+SET ANSI_NULLS ON
+GO
+	</xsl:otherwise>
+</xsl:choose>
+
 <xsl:if test="/root/database[@includeDrop='true']">
 -- Drop the <xsl:value-of select="@owner"/>.<xsl:value-of select="@name"/> procedure
 IF EXISTS (SELECT * FROM dbo.sysobjects WHERE id = object_id(N'<xsl:value-of select="@owner"/>.<xsl:value-of select="@name"/>') AND OBJECTPROPERTY(id, N'IsProcedure') = 1)
