@@ -5424,11 +5424,31 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 				case ( VSNetVersion.v2008 ) :
 					versionNumber = "9.0";
 					break;
+				case ( VSNetVersion.v2010 ) :
+					versionNumber = "10.0";
+					break;
 			}
 		
 			return versionNumber;
 		}
-		
+
+		public string GetVisualStudioSolutionFileVersionString(VSNetVersion version)
+		{
+			string versionNumber = "9.0";
+
+			switch (version)
+			{
+				case (VSNetVersion.v2008):
+					versionNumber = "10.0";
+					break;
+				case (VSNetVersion.v2010):
+					versionNumber = "11.0";
+					break;
+			}
+
+			return versionNumber;
+		}
+
 		public string GetVisualStudioProductVersionString( VSNetVersion version )
 		{
 			string versionNumber = "8.0.50727";
@@ -5438,8 +5458,60 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 				case ( VSNetVersion.v2008 ) :
 					versionNumber = "9.0.21022";
 					break;
+				case ( VSNetVersion.v2010 ) :
+					versionNumber = "10.0.20506";
+					break;
 			}
 		
+			return versionNumber;
+		}
+
+		public string GetVisualStudioToolVersionString(VSNetVersion version )
+		{
+			string toolsVersion = "3.5";
+
+			switch ( version )
+			{
+				case ( VSNetVersion.v2010 ) :
+					toolsVersion = "4.0";
+					break;
+			}
+
+			return toolsVersion;
+		}
+
+		public string GetVisualStudioNameString(VSNetVersion version)
+		{
+			string versionNumber = "2005";
+
+			switch (version)
+			{
+				case (VSNetVersion.v2008):
+					versionNumber = "2008";
+					break;
+				case (VSNetVersion.v2010):
+					versionNumber = "2010";
+					break;
+			}
+
+			return versionNumber;
+		}
+
+		public string GetVisualStudioGeneralVersionString(VSNetVersion version)
+		{
+			// Default to VS2005 version number
+			string versionNumber = "8.0.0.0";
+
+			switch (version)
+			{
+				case (VSNetVersion.v2008):
+					versionNumber = "9.0.0.0";
+					break;
+				case (VSNetVersion.v2010):
+					versionNumber = "10.0.0.0";
+					break;
+			}
+
 			return versionNumber;
 		}
 		
@@ -5453,7 +5525,10 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 					break;
 				case ( DotNetFrameworkVersion.v3_5 ) :
 					versionNumber = "3.5";
-				break;
+					break;
+				case ( DotNetFrameworkVersion.v4 ) :
+					versionNumber = "4.0";
+					break;
 			}
 		
 			return versionNumber;
@@ -5574,6 +5649,7 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 	{
 		v2005
 		,v2008
+		,v2010
 	}
 	
 	public enum DotNetFrameworkVersion
@@ -5583,7 +5659,9 @@ CREATE\s+PROC(?:EDURE)?                               # find the start of the st
 		/// <summary> version 3.0 </summary>
 		v3,
 		/// <summary> version 3.5 </summary>
-		v3_5
+		v3_5,
+		/// <summary> version 4.0 </summary>
+		v4
 	}	
 	#endregion
 	
